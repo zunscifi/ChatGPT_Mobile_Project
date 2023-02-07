@@ -16,6 +16,8 @@
 
 package com.skydoves.chatgpt.feature.login
 
+import android.content.Context
+import android.content.Intent
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -48,43 +50,32 @@ public const val NORMAL = -1
 public const val LOGIN_COMPLETED = 0
 public const val NOT_AUTHORIZED = 1
 public const val LOGIN_ING = 2
+var stopLogin = false
 /**
  *
  */
 fun LoginGPT(webView: WebView, callback: (Int) -> Unit){
-  callback(NORMAL)
+  var isCompleted : Boolean = false
   webView.apply {
     webChromeClient = WebChromeClient()
-
     webViewClient = object : RequestInspectorWebViewClient(this@apply) {
       override fun shouldInterceptRequest(
         view: WebView,
         webViewRequest: WebViewRequest
       ): WebResourceResponse? {
-        Log.e("kkkkkkkkkkkkk", webViewRequest.toString());
         try{
-          if(webViewRequest.method == "POST" && webViewRequest.headers["origin"] == "https://auth0.openai.com"){
-            var refererStr : String = webViewRequest.headers["referer"].toString();
-            var part1RefererStr : String = refererStr.split('?')[0]
-            if(part1RefererStr == "https://auth0.openai.com/u/login/password"){
-              Handler(Looper.getMainLooper()).post {
-               callback(LOGIN_ING)
-              }
-            }
-          }
           if (checkIfAuthorized(webViewRequest.headers)) {
             val authorization = webViewRequest.headers[AUTHORIZATION] ?: return null
             val cookie = webViewRequest.headers[COOKIE] ?: return null
             val userAgent = webViewRequest.headers[USER_AGENT] ?: return null
             callback(LOGIN_COMPLETED)
+            isCompleted = true
             Handler(Looper.getMainLooper()).post {
               Toast.makeText(context, R.string.toast_logged_in, Toast.LENGTH_SHORT).show()
             }
-          }else{
-            callback(NORMAL)
           }
         }catch (ignore : Exception){ }
-        return super.shouldInterceptRequest(view, webViewRequest)
+          return super.shouldInterceptRequest(view, webViewRequest)
       }
     }.apply {
       loadUrl("https://chat.openai.com/chat")

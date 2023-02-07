@@ -53,6 +53,8 @@ android {
 }
 
 dependencies {
+  //Chat UI
+  implementation ("com.github.bassaer:chatmessageview:2.1.0")
   // lottie
   implementation("com.airbnb.android:lottie:5.2.0")
 
