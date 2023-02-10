@@ -7,6 +7,7 @@ import android.view.View
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
+import com.skydoves.chatgpt.core.preferences.Preferences
 import com.skydoves.chatgpt.databinding.ActivityLoginBinding
 import com.skydoves.chatgpt.feature.login.LOGIN_COMPLETED
 import com.skydoves.chatgpt.feature.login.LOGIN_ING
@@ -19,7 +20,6 @@ class LoginActivity : ComponentActivity() {
   private val TAG : String = "LoginActivity"
   //ViewBinding
   private lateinit var binding : ActivityLoginBinding
-
     override fun onCreate(savedInstanceState: Bundle?) {
       super.onCreate(savedInstanceState)
       binding = ActivityLoginBinding.inflate(layoutInflater)
@@ -28,6 +28,13 @@ class LoginActivity : ComponentActivity() {
       addControls()
       addEvents()
     }
+
+  @Deprecated("Deprecated in Java")
+  override fun onBackPressed() {
+    if(binding.wvChatgptLogin.canGoBack()){
+      binding.wvChatgptLogin.goBack()
+    }
+  }
 
   private fun addEvents() {
 
@@ -38,7 +45,7 @@ class LoginActivity : ComponentActivity() {
   }
 
   private fun handleLoginTask() {
-      LoginGPT(binding.wvChatgptLogin) {it ->
+      LoginGPT(binding.wvChatgptLogin, this) {it ->
         when(it){
           LOGIN_COMPLETED -> {
             Log.i(TAG, "LOGIN_COMPLETED")

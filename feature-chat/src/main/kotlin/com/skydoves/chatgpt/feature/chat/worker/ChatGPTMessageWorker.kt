@@ -38,7 +38,7 @@ import java.util.UUID
 import javax.inject.Inject
 
 @HiltWorker
-internal class ChatGPTMessageWorker @AssistedInject constructor(
+class ChatGPTMessageWorker @AssistedInject constructor(
   @Assisted private val context: Context,
   @Assisted private val workerParams: WorkerParameters
 ) : CoroutineWorker(context, workerParams) {
@@ -51,30 +51,55 @@ internal class ChatGPTMessageWorker @AssistedInject constructor(
 
   override suspend fun doWork(): Result {
     ChatEntryPoint.resolve(context).inject(this)
-
     val text = workerParams.inputData.getString(DATA_TEXT) ?: return Result.failure()
     val channelId = workerParams.inputData.getString(DATA_CHANNEL_ID) ?: return Result.failure()
-    val messageId = UUID.randomUUID().toString()
+    val previous_text = getStringFromSharedPreferences(context)
+    val idMess = UUID.randomUUID().toString()
+    val messageId : String
+    val sTemp : String
+    val requestText : String
+    if(previous_text != "NULL") {
+     sTemp = "[Contents of the previous conversation : $previous_text (Questions are separated by \"@0@\", from left to right is oldest to newest)]";
+    }else{
+      sTemp = "NULL"
+    }
+    messageId = UUID.randomUUID().toString()
+    if(sTemp != "NULL"){
+      requestText = "[My Question: $text], $sTemp"
+    }else{
+      requestText = "[My Question: $text]"
+    }
     val request = GPTChatRequest(
       messages = listOf(
         GPTMessage(
-          id = UUID.randomUUID().toString(),
-          content = GPTContent(parts = listOf(text))
+          id = idMess,
+          content = GPTContent(parts = listOf(requestText))
         )
       ),
+
       parent_message_id = messageId
     )
     val response = repository.sendMessage(request)
     return if (response.isSuccess) {
-      sendStreamMessage(response.getOrThrow(), channelId)
       streamLog { "worker success!" }
+      saveStringToSharedPreferences(context, text)
       Result.success(Data.Builder().putString(DATA_SUCCESS, response.getOrThrow()).build())
     } else {
       streamLog { "worker failure!" }
       Result.failure(Data.Builder().putString(DATA_FAILURE, response.messageOrNull ?: "").build())
     }
   }
-
+  fun saveStringToSharedPreferences(context: Context, value: String) {
+    val sharedPreferences = context.getSharedPreferences("CONVERTION_CHATGPT", Context.MODE_PRIVATE)
+    val s : String = sharedPreferences.getString("PREVIOUS_CHAT", "NULL").toString()
+    val editor = sharedPreferences.edit()
+    editor.putString("PREVIOUS_CHAT", "$s@0@$value")
+    editor.apply()
+  }
+  fun getStringFromSharedPreferences(context: Context): String? {
+    val sharedPreferences = context.getSharedPreferences("CONVERTION_CHATGPT", Context.MODE_PRIVATE)
+    return sharedPreferences.getString("PREVIOUS_CHAT", "NULL")
+  }
   private suspend fun sendStreamMessage(text: String, channelId: String) {
     val channelClient = chatClient.channel(channelId)
     channelClient.sendMessage(

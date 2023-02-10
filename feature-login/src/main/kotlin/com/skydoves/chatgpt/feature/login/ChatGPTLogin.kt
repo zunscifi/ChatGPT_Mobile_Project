@@ -46,6 +46,8 @@ import com.skydoves.chatgpt.core.navigation.ChatGPTScreens
 import com.skydoves.chatgpt.core.network.AUTHORIZATION
 import com.skydoves.chatgpt.core.network.COOKIE
 import com.skydoves.chatgpt.core.network.USER_AGENT
+import com.skydoves.chatgpt.core.preferences.Preferences
+
 public const val NORMAL = -1
 public const val LOGIN_COMPLETED = 0
 public const val NOT_AUTHORIZED = 1
@@ -54,8 +56,9 @@ var stopLogin = false
 /**
  *
  */
-fun LoginGPT(webView: WebView, callback: (Int) -> Unit){
+fun LoginGPT(webView: WebView, context : Context, callback: (Int) -> Unit){
   var isCompleted : Boolean = false
+  val preferences = Preferences(context)
   webView.apply {
     webChromeClient = WebChromeClient()
     webViewClient = object : RequestInspectorWebViewClient(this@apply) {
@@ -70,6 +73,9 @@ fun LoginGPT(webView: WebView, callback: (Int) -> Unit){
             val userAgent = webViewRequest.headers[USER_AGENT] ?: return null
             callback(LOGIN_COMPLETED)
             isCompleted = true
+            preferences.authorization = authorization
+            preferences.cookie = cookie
+            preferences.userAgent = userAgent
             Handler(Looper.getMainLooper()).post {
               Toast.makeText(context, R.string.toast_logged_in, Toast.LENGTH_SHORT).show()
             }

@@ -53,8 +53,6 @@ android {
 }
 
 dependencies {
-  //Chat UI
-  implementation ("com.github.bassaer:chatmessageview:2.1.0")
   // lottie
   implementation("com.airbnb.android:lottie:5.2.0")
 
@@ -83,7 +81,8 @@ dependencies {
   implementation(libs.androidx.hilt.navigation.compose)
     implementation("com.google.android.material:material:1.4.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
-    kapt(libs.hilt.compiler)
+  implementation("androidx.work:work-runtime-ktx:2.7.1")
+  kapt(libs.hilt.compiler)
 
   // image loading
   implementation(libs.landscapist.glide)

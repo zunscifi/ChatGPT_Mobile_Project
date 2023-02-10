@@ -16,15 +16,23 @@
 
 package com.skydoves.chatgpt.core.preferences
 
+import android.content.Context
 import android.content.SharedPreferences
+import android.preference.PreferenceManager
 import com.skydoves.chatgpt.core.preferences.delegate.booleanPreferences
 import com.skydoves.chatgpt.core.preferences.delegate.stringPreferences
 import java.util.UUID
 import javax.inject.Inject
 
-class Preferences @Inject constructor(
+class Preferences {
   val sharedPreferences: SharedPreferences
-) {
+  @Inject constructor(sharedPreferences: SharedPreferences){
+    this.sharedPreferences = sharedPreferences
+  }
+
+  constructor(context: Context){
+    sharedPreferences = context.getSharedPreferences("ChatGPT_Stream", Context.MODE_PRIVATE)
+  }
 
   val userUUID: String by stringPreferences(
     key = KEY_UUID,

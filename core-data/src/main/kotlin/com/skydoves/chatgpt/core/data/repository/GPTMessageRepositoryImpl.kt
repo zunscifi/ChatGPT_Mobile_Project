@@ -16,6 +16,8 @@
 
 package com.skydoves.chatgpt.core.data.repository
 
+import android.content.Context
+import android.util.Log
 import com.skydoves.chatgpt.core.model.GPTChatRequest
 import com.skydoves.chatgpt.core.model.GPTChatResponse
 import com.skydoves.chatgpt.core.network.ChatGPTDispatchers
@@ -42,15 +44,19 @@ internal class GPTMessageRepositoryImpl @Inject constructor(
   override suspend fun sendMessage(gptChatRequest: GPTChatRequest): ApiResponse<String> {
     val mosih = Moshi.Builder().build()
     val json = mosih.adapter(GPTChatRequest::class.java).toJson(gptChatRequest)
+    Log.i("ChatGPT MessRequest: ", json.toString())
     val responseBody = ("""$json""".trimIndent()).toRequestBody(
       contentType = "text/plain".toMediaType()
     )
+    Log.i("ChatGPT ResponseBody: ", responseBody.toString())
     val response = chatGptService.sendMessage(responseBody)
+    Log.i("ChatGPT ResponseSer: ", response.toString())
     val mappedResponse = response.mapSuccess {
       val body = string()
       val chatMessage =
         body.split("\n").maxBy { it.length }.replace("data: ", "")
       val gptChatResponse = mosih.adapter(GPTChatResponse::class.java).fromJson(chatMessage)!!
+      Log.i("ChatGPT MessResponse: ", gptChatResponse.toString())
       gptChatResponse.message.content.parts[0].trim()
     }
     return mappedResponse

@@ -29,7 +29,7 @@ import com.skydoves.sandwich.operators.ApiResponseSuspendOperator
 import io.getstream.log.streamLog
 import javax.inject.Inject
 
-internal class ClearCacheGlobalOperator<T> @Inject constructor(
+class ClearCacheGlobalOperator<T> @Inject constructor(
   private val context: Context
 ) : ApiResponseSuspendOperator<T>() {
 
