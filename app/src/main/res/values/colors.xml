@@ -16,8 +16,9 @@
 -->
 <resources>
   <!-- Colors to apply in layouts -->
-  <color name="colorPrimary">@color/green_darker</color>
-  <color name="colorPrimaryDark">@color/green_darkest</color>
+  <color name="colorPrimary">#093170</color>
+  <color name="colorPrimaryDark">#3a5a8c</color>
+  <color name="colorSecondary">#3a5a8c</color>
   <color name="tab_active">@color/white</color>
   <color name="tab_inactive">@color/green_light</color>
   <color name="floating_message_create">@color/green</color>

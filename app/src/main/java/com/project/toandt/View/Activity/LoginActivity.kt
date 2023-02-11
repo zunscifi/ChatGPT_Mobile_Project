@@ -7,6 +7,7 @@ import android.view.View
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
+import com.project.toandt.Control.Database.DatabaseHelper
 import com.skydoves.chatgpt.core.preferences.Preferences
 import com.skydoves.chatgpt.databinding.ActivityLoginBinding
 import com.skydoves.chatgpt.feature.login.LOGIN_COMPLETED
@@ -17,6 +18,7 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class LoginActivity : ComponentActivity() {
+  private lateinit var databaseHelper: DatabaseHelper
   private val TAG : String = "LoginActivity"
   //ViewBinding
   private lateinit var binding : ActivityLoginBinding
@@ -41,7 +43,13 @@ class LoginActivity : ComponentActivity() {
   }
 
   private fun addControls() {
+    handleSQLite()
     handleLoginTask()
+  }
+
+  private fun handleSQLite() {
+    databaseHelper = DatabaseHelper(this)
+    val db = databaseHelper.writableDatabase
   }
 
   private fun handleLoginTask() {
