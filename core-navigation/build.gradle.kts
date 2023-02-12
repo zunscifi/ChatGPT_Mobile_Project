@@ -26,3 +26,6 @@ dependencies {
   implementation(libs.kotlinx.coroutines.android)
   api(libs.androidx.navigation.compose)
 }
+android {
+    namespace = "com.skydoves.chatgpt.core.navigation"
+}

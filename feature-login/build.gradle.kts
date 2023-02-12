@@ -26,3 +26,6 @@ dependencies {
   implementation(libs.androidx.lifecycle.viewModelCompose)
   implementation(libs.webview.inspector)
 }
+android {
+  namespace = "com.skydoves.chatgpt.feature.login"
+}

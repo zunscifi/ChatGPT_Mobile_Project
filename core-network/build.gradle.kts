@@ -47,3 +47,6 @@ dependencies {
   api(libs.retrofit.core)
   api(libs.sandwich)
 }
+android {
+    namespace = "com.skydoves.chatgpt.core.network"
+}

@@ -28,3 +28,6 @@ dependencies {
   api(libs.moshi)
   ksp(libs.moshi.codegen)
 }
+android {
+  namespace = "com.skydoves.chatgpt.core.data"
+}

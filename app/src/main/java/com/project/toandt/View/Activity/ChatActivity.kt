@@ -5,6 +5,8 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import androidx.work.Constraints
 import androidx.work.Data
@@ -14,6 +16,7 @@ import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.project.toandt.Control.Database.DatabaseHelper
 import com.project.toandt.Model.Conversation
+import com.project.toandt.Model.Message
 import com.skydoves.chatgpt.R
 import com.skydoves.chatgpt.databinding.ActivityChatBinding
 import com.skydoves.chatgpt.databinding.ActivityLoginBinding
@@ -24,6 +27,8 @@ import io.getstream.log.streamLog
 class ChatActivity : AppCompatActivity() {
   private lateinit var databaseHelper: DatabaseHelper
   private lateinit var binding : ActivityChatBinding
+  private lateinit var currentIDConversation : String
+
     override fun onCreate(savedInstanceState: Bundle?) {
       super.onCreate(savedInstanceState)
       binding = ActivityChatBinding.inflate(layoutInflater)
@@ -34,35 +39,77 @@ class ChatActivity : AppCompatActivity() {
     }
 
   private fun addEvents() {
-//    binding.send.setOnClickListener {
-//      binding.output.setText("Typing...")
-//      var inputStr : String = binding.input.text.toString()
-//      val workRequest = buildGPTMessageWorkerRequest(inputStr)
-//      WorkManager.getInstance(this).enqueue(workRequest)
-//      val workInfo = WorkManager.getInstance(this).getWorkInfoByIdLiveData(workRequest.id)
-//      workInfo.observe(this, Observer { workInfo ->
-//        if (workInfo != null) {
-//          if (workInfo.state == WorkInfo.State.SUCCEEDED) {
-//            val data = workInfo.outputData.getString(ChatGPTMessageWorker.DATA_SUCCESS)
-//            binding.output.setText(data)
-//            streamLog { "gpt message worker success: $data" }
-//          } else if (workInfo.state == WorkInfo.State.FAILED) {
-//            val error = workInfo.outputData.getString(ChatGPTMessageWorker.DATA_FAILURE) ?: ""
-//            streamLog { "gpt message worker failed: $error" }
-//            binding.output.setText("gpt message worker failed: $error")
-//          }
-//        }
-//      })
-//    }
+    binding.imgbtnSendRequest.setOnClickListener(){
+      if(binding.edtxtRequestText.text.isNotEmpty()){
+        handleEventRequestResponse(binding.edtxtRequestText.text.toString())
+      }else{
+        //SHOW ERROR
+      }
+    }
   }
 
-  private fun addControls() {
+  private fun handleEventRequestResponse(input: String) {
+    val resultData = handleRequestResponseChatGPT(input)
+    resultData.observe(this, Observer { result ->
+      if (result.containsKey("Success")) {
+        val data = result["Success"]
+        val clientMessID = databaseHelper.addMessage(currentIDConversation.toInt(), DatabaseHelper.SENDER_CLIENT, input, System.currentTimeMillis().toString())
+        val severMessID = databaseHelper.addMessage(currentIDConversation.toInt(), DatabaseHelper.SENDER_SEVER, data, System.currentTimeMillis().toString())
+        if(clientMessID != -1 && severMessID != -1){
+          var clientMess : Message = databaseHelper.getMessage(clientMessID, currentIDConversation.toInt())
+          var severMess : Message = databaseHelper.getMessage(severMessID, currentIDConversation.toInt())
+        }
+      // do something with the data
+      } else if (result.containsKey("Failure")) {
+        val error = result["Failure"]
+        // handle the error
+      }
+    })
+  }
+
+  private fun handleRequestResponseChatGPT(inputStr: String): LiveData<HashMap<String, String>> {
+    val resultData = MutableLiveData<HashMap<String, String>>()
+    val workRequest = buildGPTMessageWorkerRequest(inputStr)
+    WorkManager.getInstance(this).enqueue(workRequest)
+    val workInfo = WorkManager.getInstance(this).getWorkInfoByIdLiveData(workRequest.id)
+    workInfo.observe(this, Observer { workInfo ->
+      if (workInfo != null) {
+        if (workInfo.state == WorkInfo.State.SUCCEEDED) {
+          val data = workInfo.outputData.getString(ChatGPTMessageWorker.DATA_SUCCESS)
+          streamLog { "gpt message worker success: $data" }
+          val result = HashMap<String, String>()
+          result["Success"] = data.toString()
+          resultData.postValue(result)
+        } else if (workInfo.state == WorkInfo.State.FAILED) {
+          val error = workInfo.outputData.getString(ChatGPTMessageWorker.DATA_FAILURE) ?: ""
+          streamLog { "gpt message worker failed: $error" }
+          val result = HashMap<String, String>()
+          result["Failure"] = error.toString()
+          resultData.postValue(result)
+        }
+      }
+    })
+    return resultData
+  }
+
+
+
+    private fun addControls() {
     handleSQLite()
   }
 
   private fun handleSQLite() {
+    handleFirstInit()
+    handleDataCurrentConversation()
+  }
+
+  private fun handleDataCurrentConversation() {
+    currentIDConversation = getStringFromSharedPreferences(this).toString()
+  }
+
+  private fun handleFirstInit() {
     databaseHelper = DatabaseHelper(this)
-    var conversationID : String = getStringFromSharedPreferences(this).toString()
+    val conversationID : String = getStringFromSharedPreferences(this).toString()
     if(conversationID == "NULL"){
       val conversationId = databaseHelper.addConversation("Test")
       if(conversationId != -1){

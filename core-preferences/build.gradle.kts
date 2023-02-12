@@ -21,3 +21,6 @@ plugins {
 
 dependencies {
 }
+android {
+    namespace = "com.skydoves.chatgpt.core.preferences"
+}

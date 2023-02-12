@@ -7,6 +7,8 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
+import com.project.toandt.Model.Message;
+
 public class DatabaseHelper extends SQLiteOpenHelper {
   public static final String SENDER_SEVER = "ChatGPT";
 
@@ -63,7 +65,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     return (int) result;
   }
 
-  public boolean addMessage(int conversationId, String sender, String message, String timestamp) {
+  public int addMessage(int conversationId, String sender, String message, String timestamp) {
     SQLiteDatabase db = this.getWritableDatabase();
     ContentValues values = new ContentValues();
     values.put(COLUMN_MESSAGE_CONVERSATION_ID, conversationId);
@@ -72,7 +74,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     values.put(COLUMN_MESSAGE_TIMESTAMP, timestamp);
     long result = db.insert(TABLE_MESSAGES, null, values);
     db.close();
-    return result != -1;
+    return (int) result;
   }
 
   public Cursor getAllConversations() {
@@ -86,6 +88,23 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     Cursor cursor = db.rawQuery("SELECT * FROM " + TABLE_MESSAGES
       + " WHERE " + COLUMN_MESSAGE_CONVERSATION_ID + " = " + conversationId, null);
     return cursor;
+  }
+
+  public Message getMessage(int messageId, int conversationId){
+    Cursor cursor = getAllMessages(conversationId);
+    Message message = null;
+    while (cursor.moveToNext()){
+      if(cursor.getInt(0) == messageId){
+        message = new Message(
+          cursor.getLong(0),
+          cursor.getInt(1),
+          cursor.getString(2),
+          cursor.getString(3),
+          cursor.getLong(4)
+          );
+      }
+    }
+    return message;
   }
 
   public boolean updateConversation(int id, String name) {
