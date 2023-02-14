@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  android:orientation="vertical">
+  <com.google.android.material.card.MaterialCardView
+    android:id="@+id/mcv_new_chat"
+    android:layout_width="match_parent"
+    android:layout_height="50dp"
+    app:cardElevation="0dp"
+    app:strokeWidth="1dp"
+    app:cardCornerRadius="10dp"
+    app:cardBackgroundColor="@color/colorPrimary"
+    app:strokeColor="@color/colorSecondary"
+    android:layout_marginBottom="10dp">
+    <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="match_parent">
+      <TextView
+        android:id="@+id/txt_state_chatgpt"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:text="New Chat"
+        android:layout_margin="10dp"
+        android:textSize="15sp"
+        android:gravity="center"
+        android:textColor="@color/white"/>
+    </LinearLayout>
+  </com.google.android.material.card.MaterialCardView>
+</LinearLayout>

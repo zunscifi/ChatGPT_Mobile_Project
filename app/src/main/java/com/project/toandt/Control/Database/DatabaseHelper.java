@@ -8,6 +8,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
 import com.project.toandt.Model.Message;
+import com.project.toandt.Model.MessageManager;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
   public static final String SENDER_SEVER = "ChatGPT";
@@ -105,6 +106,21 @@ public class DatabaseHelper extends SQLiteOpenHelper {
       }
     }
     return message;
+  }
+  public MessageManager getMessageManager(int conversationId){
+    MessageManager messageManager = new MessageManager();
+    Cursor cursor = getAllMessages(conversationId);
+    while (cursor.moveToNext()){
+      Message message = new Message(
+          cursor.getLong(0),
+          cursor.getInt(1),
+          cursor.getString(2),
+          cursor.getString(3),
+          cursor.getLong(4)
+        );
+      messageManager.addMessage(message);
+    }
+    return messageManager;
   }
 
   public boolean updateConversation(int id, String name) {

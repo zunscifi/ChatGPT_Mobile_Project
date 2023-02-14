@@ -6,21 +6,86 @@
     android:layout_height="match_parent"
     tools:context="com.project.toandt.View.Activity.ChatActivity"
   android:background="@color/colorPrimary">
+  <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="50dp"
+    android:orientation="vertical"
+    android:gravity="center |left">
+    <ImageButton
+      android:id="@+id/imgbtn_menu_conversation"
+      android:layout_width="40dp"
+      android:layout_height="40dp"
+      android:layout_weight="0.1"
+      android:background="?selectableItemBackgroundBorderless"
+      android:src="@drawable/baseline_menu_24"/>
+  </LinearLayout>
+  <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="50dp"
+    android:orientation="vertical"
+    android:gravity="center">
+    <TextView
+      android:id="@+id/txt_conversation_name"
+      android:layout_width="match_parent"
+      android:layout_height="match_parent"
+      android:textSize="17sp"
+      android:text="Conversation Name"
+      android:gravity="center"
+      android:textColor="@color/white"/>
+  </LinearLayout>
+  <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="50dp"
+    android:orientation="vertical"
+    android:gravity="center |right">
+    <ImageButton
+      android:id="@+id/imgbtn_clear_memory"
+      android:layout_width="40dp"
+      android:layout_height="40dp"
+      android:layout_weight="0.1"
+      android:background="?selectableItemBackgroundBorderless"
+      android:src="@drawable/baseline_cleaning_services_24"/>
+  </LinearLayout>
   <androidx.recyclerview.widget.RecyclerView
     android:id="@+id/rcv_chat_conversation"
+    android:overScrollMode="never"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:layout_marginBottom="70dp"/>
+    android:layout_marginBottom="50dp"
+    android:layout_marginTop="50dp"/>
     <LinearLayout
       android:layout_width="match_parent"
       android:layout_height="match_parent"
       android:orientation="vertical"
-      android:gravity="bottom">
+      android:gravity="bottom |center">
+      <com.google.android.material.card.MaterialCardView
+        android:id="@+id/txt_state_while_waiting_response"
+        android:visibility="gone"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:cardElevation="0dp"
+        app:strokeWidth="1dp"
+        app:cardCornerRadius="10dp"
+        app:cardBackgroundColor="@color/colorPrimary"
+        app:strokeColor="@color/colorSecondary"
+        android:layout_marginBottom="10dp">
+        <LinearLayout
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content">
+          <TextView
+            android:id="@+id/txt_state_chatgpt"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ChatGPT are typing..."
+            android:layout_margin="10dp"
+            android:textSize="15sp"
+            android:gravity="center"
+            android:textColor="@color/white"/>
+        </LinearLayout>
+      </com.google.android.material.card.MaterialCardView>
       <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
         android:layout_height="50dp"
-        android:layout_margin="20dp"
-        app:cardCornerRadius="10dp"
         app:cardElevation="0dp">
         <LinearLayout
           android:layout_width="match_parent"
@@ -31,16 +96,27 @@
           <EditText
             android:id="@+id/edtxt_request_text"
             android:layout_width="0dp"
+            android:layout_marginLeft="20dp"
+            android:hint="Ask ChatGPT here..."
+            android:textSize="15sp"
+            android:textColor="@color/white"
             android:layout_height="match_parent"
             android:layout_weight="0.8"
             android:background="@null"
             android:focusable="true"/>
           <ImageButton
+            android:id="@+id/imgbtn_speech_to_text"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="0.1"
+            android:background="?selectableItemBackgroundBorderless"
+            android:src="@drawable/icon_voice"/>
+          <ImageButton
             android:id="@+id/imgbtn_send_request"
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="0.2"
-            android:background="@null"
+            android:layout_weight="0.1"
+            android:background="?selectableItemBackgroundBorderless"
             android:src="@drawable/icon__send"/>
         </LinearLayout>
       </androidx.cardview.widget.CardView>

@@ -53,7 +53,8 @@ class ChatGPTMessageWorker @AssistedInject constructor(
     ChatEntryPoint.resolve(context).inject(this)
     val text = workerParams.inputData.getString(DATA_TEXT) ?: return Result.failure()
     val channelId = workerParams.inputData.getString(DATA_CHANNEL_ID) ?: return Result.failure()
-    val previous_text = getStringFromSharedPreferences(context)
+    val conversation_id = workerParams.inputData.getString(CONVERSATION_ID) ?: return Result.failure()
+    val previous_text = getStringFromSharedPreferences(context, conversation_id)
     val idMess = UUID.randomUUID().toString()
     val messageId : String
     val sTemp : String
@@ -82,23 +83,23 @@ class ChatGPTMessageWorker @AssistedInject constructor(
     val response = repository.sendMessage(request)
     return if (response.isSuccess) {
       streamLog { "worker success!" }
-      saveStringToSharedPreferences(context, text)
+      saveStringToSharedPreferences(context, text, conversation_id)
       Result.success(Data.Builder().putString(DATA_SUCCESS, response.getOrThrow()).build())
     } else {
       streamLog { "worker failure!" }
       Result.failure(Data.Builder().putString(DATA_FAILURE, response.messageOrNull ?: "").build())
     }
   }
-  fun saveStringToSharedPreferences(context: Context, value: String) {
+  fun saveStringToSharedPreferences(context: Context, value: String, conversation_id: String) {
     val sharedPreferences = context.getSharedPreferences("CONVERTION_CHATGPT", Context.MODE_PRIVATE)
-    val s : String = sharedPreferences.getString("PREVIOUS_CHAT", "NULL").toString()
+    val s : String = sharedPreferences.getString(conversation_id, "NULL").toString()
     val editor = sharedPreferences.edit()
-    editor.putString("PREVIOUS_CHAT", "$s@0@$value")
+    editor.putString(conversation_id, "$s@0@$value")
     editor.apply()
   }
-  fun getStringFromSharedPreferences(context: Context): String? {
+  fun getStringFromSharedPreferences(context: Context, conversation_id: String): String? {
     val sharedPreferences = context.getSharedPreferences("CONVERTION_CHATGPT", Context.MODE_PRIVATE)
-    return sharedPreferences.getString("PREVIOUS_CHAT", "NULL")
+    return sharedPreferences.getString(conversation_id, "NULL")
   }
   private suspend fun sendStreamMessage(text: String, channelId: String) {
     val channelClient = chatClient.channel(channelId)
@@ -117,5 +118,6 @@ class ChatGPTMessageWorker @AssistedInject constructor(
     const val DATA_CHANNEL_ID = "DATA_CHANNEL_ID"
     const val DATA_SUCCESS = "DATA_SUCCESS"
     const val DATA_FAILURE = "DATA_FAILURE"
+    const val CONVERSATION_ID = "-1"
   }
 }

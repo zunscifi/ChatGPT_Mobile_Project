@@ -54,6 +54,9 @@ android {
 }
 
 dependencies {
+
+  implementation ("co.zsmb:materialdrawer-kt:3.0.0")
+  implementation ("net.gotev:speech:1.6.2")
   // lottie
   implementation("com.airbnb.android:lottie:5.2.0")
 
