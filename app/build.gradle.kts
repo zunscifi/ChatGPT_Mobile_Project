@@ -58,7 +58,7 @@ dependencies {
   implementation ("co.zsmb:materialdrawer-kt:3.0.0")
   implementation ("net.gotev:speech:1.6.2")
   // lottie
-  implementation("com.airbnb.android:lottie:5.2.0")
+  implementation("com.airbnb.android:lottie:6.0.0")
 
   // core modules
   implementation(project(":core-designsystem"))
