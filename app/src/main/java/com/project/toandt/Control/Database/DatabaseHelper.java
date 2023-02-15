@@ -134,10 +134,20 @@ public class DatabaseHelper extends SQLiteOpenHelper {
   }
 
   public boolean deleteConversation(int id) {
+    Log.i("DatabaseHelper.java", "Delete Conversation ID: " + String.valueOf(id));
     SQLiteDatabase db = this.getWritableDatabase();
     int result = db.delete(TABLE_CONVERSATIONS,
       COLUMN_CONVERSATION_ID + " = " + id, null);
     db.close();
     return result > 0;
   }
+
+  public boolean deleteAllMessagesWithConversationId(int conversationId) {
+    SQLiteDatabase db = this.getWritableDatabase();
+    int result = db.delete(TABLE_MESSAGES,
+      COLUMN_MESSAGE_CONVERSATION_ID + " = " + conversationId, null);
+    db.close();
+    return result > 0;
+  }
+
 }

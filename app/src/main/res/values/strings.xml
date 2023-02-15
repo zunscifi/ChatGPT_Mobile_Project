@@ -15,4 +15,5 @@
 -->
 <resources>
     <string name="app_name">ChatGPT Mobile</string>
+    <string name="chatgpt_welcome_message">Welcome to ChatGPT Version Mobile By TechMath! I\'m an AI language model by OpenAI here to assist you in any way I can. Whether you want to chat about a specific topic, need help with a task, or just want to have a friendly conversation, I\'m here for you. Feel free to ask me anything and let\'s get started!</string>
 </resources>

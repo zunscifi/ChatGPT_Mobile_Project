@@ -54,7 +54,7 @@ android {
 }
 
 dependencies {
-
+  implementation ("com.github.mejdi14:Flat-Dialog-Android:1.0.5")
   implementation ("co.zsmb:materialdrawer-kt:3.0.0")
   implementation ("net.gotev:speech:1.6.2")
   // lottie

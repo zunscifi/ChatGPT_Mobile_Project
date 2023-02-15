@@ -28,4 +28,27 @@
         android:textColor="@color/white"/>
     </LinearLayout>
   </com.google.android.material.card.MaterialCardView>
+  <com.google.android.material.card.MaterialCardView
+    android:id="@+id/mcv_delete_all_conversation"
+    android:layout_width="match_parent"
+    android:layout_height="50dp"
+    app:cardElevation="0dp"
+    app:strokeWidth="1dp"
+    app:cardCornerRadius="10dp"
+    app:cardBackgroundColor="@color/colorPrimary"
+    app:strokeColor="@color/colorSecondary"
+    android:layout_marginBottom="10dp">
+    <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="match_parent">
+      <TextView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:text="Remove All Conversation"
+        android:layout_margin="10dp"
+        android:textSize="15sp"
+        android:gravity="center"
+        android:textColor="@color/white"/>
+    </LinearLayout>
+  </com.google.android.material.card.MaterialCardView>
 </LinearLayout>

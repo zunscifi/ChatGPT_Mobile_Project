@@ -4,6 +4,7 @@ import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.content.ContextCompat
@@ -21,11 +22,15 @@ class MessageAdapter(private val context: Context, private val messageManager: M
   inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
     private val tv_response_text : TextView = itemView.findViewById(R.id.tv_response_text)
     private val ll_background_message : LinearLayout = itemView.findViewById(R.id.ll_background_message)
+    private val img_sender : ImageView = itemView.findViewById(R.id.img_sender)
     fun bind(message: Message) {
       tv_response_text.text = message.content
+      tv_response_text.setTextIsSelectable(true)
       if(message.sender == DatabaseHelper.SENDER_CLIENT){
+        img_sender.setImageResource(R.drawable.user)
         ll_background_message.setBackgroundColor(ContextCompat.getColor(context, R.color.colorSecondary))
       }else{
+        img_sender.setImageResource(R.drawable.openai)
         ll_background_message.setBackgroundColor(ContextCompat.getColor(context, R.color.colorPrimary))
       }
     }

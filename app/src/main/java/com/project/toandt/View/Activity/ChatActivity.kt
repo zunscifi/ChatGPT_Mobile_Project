@@ -27,6 +27,7 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequest
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import com.example.flatdialoglibrary.dialog.FlatDialog
 import com.google.android.material.card.MaterialCardView
 import com.mikepenz.materialdrawer.Drawer
 import com.mikepenz.materialdrawer.DrawerBuilder
@@ -40,6 +41,7 @@ import com.project.toandt.Model.Conversation
 import com.project.toandt.Model.ConversationManager
 import com.project.toandt.Model.Message
 import com.project.toandt.Model.MessageManager
+import com.project.toandt.View.Dialog.DialogToolConversation
 import com.skydoves.chatgpt.R
 import com.skydoves.chatgpt.databinding.ActivityChatBinding
 import com.skydoves.chatgpt.feature.chat.worker.ChatGPTMessageWorker
@@ -48,6 +50,7 @@ import net.gotev.speech.GoogleVoiceTypingDisabledException
 import net.gotev.speech.Speech
 import net.gotev.speech.SpeechDelegate
 import net.gotev.speech.SpeechRecognitionNotAvailable
+import okhttp3.internal.notifyAll
 
 class ChatActivity : AppCompatActivity() {
   private lateinit var databaseHelper: DatabaseHelper
@@ -124,6 +127,11 @@ class ChatActivity : AppCompatActivity() {
   }
 
   private fun handleDisplayChatMessages(){
+    for(conver in conversationManager.getConversations()){
+      if(conver.id.toString() == currentIDConversation){
+        binding.txtConversationName.text = conver.name
+      }
+    }
     val recyclerView = binding.rcvChatConversation
     recyclerView.layoutManager = LinearLayoutManager(this)
     recyclerView.adapter = MessageAdapter(this, messageManager, binding)
@@ -176,6 +184,7 @@ class ChatActivity : AppCompatActivity() {
               str.append(res).append(" ")
             }
             binding.edtxtRequestText.setText(str.toString().trim())
+            binding.edtxtRequestText.setSelection(str.toString().trim().length)
             Log.i("speech", "partial result: ${str.toString().trim()}")
           }
 
@@ -237,61 +246,49 @@ class ChatActivity : AppCompatActivity() {
       handleSQLite()
       initMessageManager()
       initConversationManager()
+      handleDrawer()
       handleDisplayChatMessages()
-      handlerPointer()
       checkRecordAudio()
       initDefaultValue()
   }
 
-  private fun initConversationManager() {
-    conversationManager = ConversationManager()
-    val cursor = databaseHelper.allConversations
-    while(cursor.moveToNext()){
-      val conversation = Conversation(cursor.getLong(0), cursor.getString(1))
-      conversationManager.addConversation(conversation)
-    }
-    cursor.close()
+  private fun handleDrawer(){
     val viewGroup = LayoutInflater.from(this).inflate(R.layout.item_top_drawer, null) as ViewGroup
     val mcv_new_chat : MaterialCardView = viewGroup.findViewById(R.id.mcv_new_chat)
-    mcv_new_chat.setOnClickListener(){
-      val isConversation = databaseHelper.addConversation("Test")
-      if(isConversation != -1){
+    val mcv_delete_all_conversation : MaterialCardView = viewGroup.findViewById(R.id.mcv_delete_all_conversation)
+    mcv_new_chat.setOnClickListener() {
+      val isConversation = databaseHelper.addConversation("New Conversation")
+      if (isConversation != -1) {
         currentIDConversation = isConversation.toString()
+        databaseHelper.addMessage(currentIDConversation.toInt(),
+          DatabaseHelper.SENDER_SEVER,
+          getString(R.string.chatgpt_welcome_message),
+        System.currentTimeMillis().toString())
         drawer.closeDrawer()
         initConversationManager()
+        handleDrawer()
         initMessageManager()
         handleDisplayChatMessages()
       }
     }
-//    val linearLayout = LinearLayout(this)
-//    linearLayout.orientation = LinearLayout.VERTICAL
-//    val layoutParams = LinearLayout.LayoutParams(
-//      LinearLayout.LayoutParams.MATCH_PARENT,
-//      LinearLayout.LayoutParams.WRAP_CONTENT
-//    )
-//
-//    val buttonCreate = Button(this)
-//    buttonCreate.text = "Create new"
-//    buttonCreate.setBackgroundColor(Color.parseColor("#ffffff"))
-//    buttonCreate.layoutParams = layoutParams
-//    linearLayout.addView(buttonCreate)
-//
-//    val buttonRemove = Button(this)
-//    buttonRemove.text = "Remove"
-//    buttonRemove.setBackgroundColor(Color.parseColor("#ffffff"))
-//    buttonRemove.layoutParams = layoutParams
-//    linearLayout.addView(buttonRemove)
-//
-//    buttonCreate.setOnClickListener(){
-//      val isConversation = databaseHelper.addConversation("Test")
-//      if(isConversation != -1){
-//        currentIDConversation = isConversation.toString()
-//        drawer.closeDrawer()
-//        initConversationManager()
-//        initMessageManager()
-//        handleDisplayChatMessages()
-//      }
-//    }
+    mcv_delete_all_conversation.setOnClickListener(){
+      for(conversation in conversationManager.getConversations()){
+        if(conversationManager.getConversations().size > 1){
+          val isDeletedConversation = databaseHelper.deleteConversation(conversation.id.toInt())
+          if(isDeletedConversation){
+            initConversationManager()
+            val isDeletedMessages = databaseHelper.deleteAllMessagesWithConversationId(conversation.id.toInt())
+          }
+        }
+      }
+      Toast.makeText(this@ChatActivity, "Delete all conversation completed!", Toast.LENGTH_SHORT).show();
+      initConversationManager()
+      currentIDConversation = conversationManager.getConversations()[0].id.toString()
+      drawer.closeDrawer()
+      handleDrawer()
+      initMessageManager()
+      handleDisplayChatMessages()
+    }
     drawer = DrawerBuilder()
       .withActivity(this)
       .withCloseOnClick(true)
@@ -313,9 +310,84 @@ class ChatActivity : AppCompatActivity() {
       .withOnDrawerItemLongClickListener(object : Drawer.OnDrawerItemLongClickListener{
         override fun onItemLongClick(view: View, position: Int, drawerItem: IDrawerItem<*>): Boolean {
           if(drawerItem is ProfileDrawerItem){
-            val s = drawerItem.contentDescription.toString()
-            currentIDConversation = s
-
+            if(!isFinishing){
+              val flatDialog = FlatDialog(this@ChatActivity)
+              flatDialog.setTitle("Conversation Detail")
+                .setBackgroundColor(ContextCompat.getColor(this@ChatActivity, R.color.colorPrimary))
+                .setSubtitle("Change anything you want here")
+                .setFirstTextFieldHint("This is name of conversation...")
+                .setFirstTextField(drawerItem.name.toString())
+                .setFirstButtonText("SAVE DETAIL")
+                .setFirstButtonColor(ContextCompat.getColor(this@ChatActivity, R.color.colorSecondary))
+                .setFirstButtonTextColor(ContextCompat.getColor(this@ChatActivity, R.color.white))
+                .setSecondButtonText("DELETE CONVERSATION")
+                .setSecondButtonColor(ContextCompat.getColor(this@ChatActivity, R.color.colorSecondary))
+                .setSecondButtonTextColor(ContextCompat.getColor(this@ChatActivity, R.color.white))
+                .setThirdButtonText("CANCEL")
+                .setThirdButtonColor(ContextCompat.getColor(this@ChatActivity, R.color.colorSecondary))
+                .setThirdButtonTextColor(ContextCompat.getColor(this@ChatActivity,  R.color.white))
+                .withFirstButtonListner {
+                  val nameConversation = flatDialog.firstTextField
+                  databaseHelper.updateConversation(drawerItem.contentDescription.toString().toInt(), nameConversation)
+                  initConversationManager()
+                  drawer.closeDrawer()
+                  handleDrawer()
+                  flatDialog.dismiss()
+                }
+                .withSecondButtonListner {
+                  initConversationManager()
+                  if(conversationManager.getConversations().size > 1){
+                    val isDeletedConversation = databaseHelper.deleteConversation(drawerItem.contentDescription.toString().toInt())
+                    if(isDeletedConversation){
+                      val isDeletedMessages = databaseHelper.deleteAllMessagesWithConversationId(drawerItem.contentDescription.toString().toInt())
+                      initConversationManager()
+                      currentIDConversation = conversationManager.getConversations()[0].id.toString()
+                      drawer.closeDrawer()
+                      handleDrawer()
+                      initMessageManager()
+                      handleDisplayChatMessages()
+                      flatDialog.dismiss()
+                      Toast.makeText(this@ChatActivity, "Delete conversation completed!", Toast.LENGTH_SHORT).show();
+                    }
+                  }else{
+                    Toast.makeText(this@ChatActivity, "There must be at least one Message that exists!", Toast.LENGTH_SHORT).show();
+                  }
+                }
+                .withThirdButtonListner {
+                  flatDialog.dismiss()
+                }
+                .show()
+//              val dialog = object : DialogToolConversation(this@ChatActivity) {
+//
+//                override fun onNameConversationChange(s: String) {
+//                  super.onNameConversationChange(s)
+//                  databaseHelper.updateConversation(drawerItem.contentDescription.toString().toInt(), s)
+//                  initConversationManager()
+//                  handleDrawer()
+//                }
+//
+//                override fun onRemoveClicked() {
+//                  initConversationManager()
+//                  if(conversationManager.getConversations().size > 1){
+//                    val isDeletedConversation = databaseHelper.deleteConversation(currentIDConversation.toInt())
+//                    if(isDeletedConversation){
+//                      val isDeletedMessages = databaseHelper.deleteAllMessagesWithConversationId(currentIDConversation.toInt())
+//                      if(isDeletedMessages){
+//                        initConversationManager()
+//                        currentIDConversation = conversationManager.getConversations()[0].id.toString()
+//                        handleDrawer()
+//                        initMessageManager()
+//                        handleDisplayChatMessages()
+//                      }
+//                    }
+//                  }else{
+//                    Toast.makeText(context, "There must be at least one Message that exists!", Toast.LENGTH_SHORT).show();
+//                  }
+//                }
+//              }
+//              dialog.setTitle("My Dialog")
+//              dialog.show()
+            }
           }
           return true
         }
@@ -328,7 +400,7 @@ class ChatActivity : AppCompatActivity() {
     for(conversation in conversationList){
       drawer.addItem(
         ProfileDrawerItem()
-        .withName(conversation.name)
+          .withName(conversation.name)
           .withTextColorRes(R.color.white)
           .withIcon(R.drawable.openai)
           .withNameShown(true)
@@ -339,21 +411,14 @@ class ChatActivity : AppCompatActivity() {
     drawer.addItem(DividerDrawerItem())
   }
 
-  private fun handlerPointer() {
-    binding.edtxtRequestText.addTextChangedListener(object : TextWatcher {
-      override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
-        // Do nothing
-      }
-
-      override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
-        // Do nothing
-      }
-
-      override fun afterTextChanged(s: Editable) {
-        // Move the cursor to the end of the text
-        binding.edtxtRequestText.setSelection(s.length)
-      }
-    })
+  private fun initConversationManager() {
+    conversationManager = ConversationManager()
+    val cursor = databaseHelper.allConversations
+    while(cursor.moveToNext()){
+      val conversation = Conversation(cursor.getLong(0), cursor.getString(1))
+      conversationManager.addConversation(conversation)
+    }
+    cursor.close()
   }
 
   private fun initDefaultValue() {
