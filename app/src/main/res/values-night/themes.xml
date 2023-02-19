@@ -19,13 +19,10 @@
   <style name="Theme.ChatGPTAndroid" parent="Theme.AppCompat.DayNight.NoActionBar">
     <item name="android:statusBarColor">@color/green_darker</item>
   </style>
-  <style name="Theme.Diary.NoActionBar" parent="Theme.MaterialComponents.Light.NoActionBar">
-    <item name="windowActionBar">false</item>
-    <item name="windowNoTitle">true</item>
-    <item name="android:windowDrawsSystemBarBackgrounds">true</item>
-    <item name="android:windowTranslucentStatus">false</item>
-    <item name="android:statusBarColor">@color/colorPrimary</item>
-    <item name="android:windowLightStatusBar" tools:targetApi="m">false</item>
+  <style name="Theme.Diary.NoActionBar" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <item name="colorPrimary">@color/colorPrimary</item>
+    <item name="colorPrimaryDark">@color/colorPrimary</item>
+    <item name="colorAccent">@color/colorPrimary</item>
   </style>
   <style name="NewDialog">
     <item name="android:windowFrame">@null</item>

@@ -73,6 +73,7 @@ fun LoginGPT(webView: WebView, context : Context, callback: (Int) -> Unit){
             val userAgent = webViewRequest.headers[USER_AGENT] ?: return null
             callback(LOGIN_COMPLETED)
             isCompleted = true
+
             preferences.authorization = authorization
             preferences.cookie = cookie
             preferences.userAgent = userAgent

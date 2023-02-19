@@ -1,19 +1,16 @@
 package com.project.toandt.View.Activity
 
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
-import android.view.View
-import android.webkit.WebView
-import android.webkit.WebViewClient
+import android.webkit.CookieManager
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import com.project.toandt.Control.Database.DatabaseHelper
-import com.skydoves.chatgpt.core.preferences.Preferences
 import com.skydoves.chatgpt.databinding.ActivityLoginBinding
 import com.skydoves.chatgpt.feature.login.LOGIN_COMPLETED
-import com.skydoves.chatgpt.feature.login.LOGIN_ING
 import com.skydoves.chatgpt.feature.login.LoginGPT
-import com.skydoves.chatgpt.feature.login.NORMAL
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -27,6 +24,11 @@ class LoginActivity : ComponentActivity() {
       binding = ActivityLoginBinding.inflate(layoutInflater)
       val view = binding.root
       setContentView(view)
+      val pref: SharedPreferences = getSharedPreferences("pref", MODE_PRIVATE)
+      if (!pref.getBoolean("welcomed", false)) {
+        startActivity(Intent(this, SplassActivity::class.java))
+        pref.edit().putBoolean("welcomed", true).apply()
+      }
       addControls()
       addEvents()
     }
@@ -53,6 +55,23 @@ class LoginActivity : ComponentActivity() {
   }
 
   private fun handleLoginTask() {
+    try{
+      val intent = intent
+      val MODE  = intent.getStringExtra("MODE")
+      if(MODE == "SIGN_OUT"){
+        binding.wvChatgptLogin.clearFormData()
+        binding.wvChatgptLogin.clearHistory()
+        binding.wvChatgptLogin.clearCache(true)
+        CookieManager.getInstance().removeAllCookies(null)
+        Toast.makeText(this@LoginActivity, "SignOut Completed", Toast.LENGTH_SHORT).show()
+      }else if (MODE == "NOT_PRESENT"){
+        binding.wvChatgptLogin.clearFormData()
+        binding.wvChatgptLogin.clearHistory()
+        binding.wvChatgptLogin.clearCache(true)
+        CookieManager.getInstance().removeAllCookies(null)
+        Toast.makeText(this@LoginActivity, "Your session not present anymore, please login again", Toast.LENGTH_SHORT).show()
+      }
+    }catch (e : Exception){}
       LoginGPT(binding.wvChatgptLogin, this) {it ->
         when(it){
           LOGIN_COMPLETED -> {

@@ -43,6 +43,10 @@ class Preferences {
     key = KEY_AUTHORIZATION,
     defaultValue = String.Empty
   )
+  var headerLogin: String by stringPreferences(
+    key = KEY_HEADER,
+    defaultValue = String.Empty
+  )
 
   var cookie: String by stringPreferences(
     key = KEY_COOKIE,
@@ -65,6 +69,7 @@ class Preferences {
     private const val KEY_COOKIE: String = "key_cookie"
     private const val KEY_USER_AGENT: String = "key_user_agent"
     private const val KEY_BALLOON_CHANNEL_DISPLAYED = "key_balloon_channel_displayed"
+    private const val KEY_HEADER : String = "key_header"
   }
 }
 

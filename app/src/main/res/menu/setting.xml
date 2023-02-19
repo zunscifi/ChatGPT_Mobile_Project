@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+  <item
+    android:id="@+id/action_clear_memory"
+    android:title="Clear memory Chat GPT"
+    android:icon="@drawable/baseline_cleaning_services_24"/>
+
+  <item
+    android:id="@+id/action_lang_spec_boost"
+    android:title="Language-Specific Boost"
+    android:icon="@drawable/baseline_language_24"/>
+
+  <item
+    android:id="@+id/action_logout"
+    android:title="Logout"
+    android:icon="@drawable/baseline_logout_24"/>
+
+</menu>

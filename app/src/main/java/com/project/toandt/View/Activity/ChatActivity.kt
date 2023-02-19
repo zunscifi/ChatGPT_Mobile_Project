@@ -2,31 +2,29 @@ package com.project.toandt.View.Activity
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Color
-import androidx.appcompat.app.AppCompatActivity
+import android.os.Build
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
+import android.os.Handler
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.LinearLayout
+import android.webkit.CookieManager
 import android.widget.Toast
+import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.work.Constraints
-import androidx.work.Data
-import androidx.work.NetworkType
-import androidx.work.OneTimeWorkRequest
-import androidx.work.WorkInfo
-import androidx.work.WorkManager
+import com.example.awesomedialog.AwesomeDialog
+import com.example.awesomedialog.body
+import com.example.awesomedialog.icon
+import com.example.awesomedialog.onNegative
+import com.example.awesomedialog.position
+import com.example.awesomedialog.title
 import com.example.flatdialoglibrary.dialog.FlatDialog
 import com.google.android.material.card.MaterialCardView
 import com.mikepenz.materialdrawer.Drawer
@@ -35,34 +33,52 @@ import com.mikepenz.materialdrawer.model.DividerDrawerItem
 import com.mikepenz.materialdrawer.model.PrimaryDrawerItem
 import com.mikepenz.materialdrawer.model.ProfileDrawerItem
 import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem
-import com.project.toandt.Control.Adapter.MessageAdapter
 import com.project.toandt.Control.Database.DatabaseHelper
+import com.project.toandt.Control.SharedPref.ConversionSharedPreferences
+import com.project.toandt.Control.WorkerChat.ChatManager
+import com.project.toandt.Control.WorkerChat.ChatResponseHandler
+import com.project.toandt.Control.WorkerChat.ChatWorkerBuilder
 import com.project.toandt.Model.Conversation
 import com.project.toandt.Model.ConversationManager
-import com.project.toandt.Model.Message
 import com.project.toandt.Model.MessageManager
-import com.project.toandt.View.Dialog.DialogToolConversation
 import com.skydoves.chatgpt.R
+import com.skydoves.chatgpt.core.network.AUTHORIZATION
+import com.skydoves.chatgpt.core.network.COOKIE
+import com.skydoves.chatgpt.core.network.USER_AGENT
+import com.skydoves.chatgpt.core.preferences.Preferences
 import com.skydoves.chatgpt.databinding.ActivityChatBinding
-import com.skydoves.chatgpt.feature.chat.worker.ChatGPTMessageWorker
-import io.getstream.log.streamLog
+import com.skydoves.chatgpt.feature.login.ChatGPTLogin
+import com.skydoves.chatgpt.feature.login.LOGIN_COMPLETED
+import com.skydoves.chatgpt.feature.login.LoginGPT
+import dev.shreyaspatil.MaterialDialog.AbstractDialog
+import dev.shreyaspatil.MaterialDialog.BottomSheetMaterialDialog
+import dev.shreyaspatil.MaterialDialog.interfaces.DialogInterface
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import net.gotev.speech.GoogleVoiceTypingDisabledException
 import net.gotev.speech.Speech
 import net.gotev.speech.SpeechDelegate
 import net.gotev.speech.SpeechRecognitionNotAvailable
-import okhttp3.internal.notifyAll
+import nl.invissvenska.modalbottomsheetdialog.Item
+import nl.invissvenska.modalbottomsheetdialog.ModalBottomSheetDialog
 
-class ChatActivity : AppCompatActivity() {
+class ChatActivity : AppCompatActivity(), ModalBottomSheetDialog.Listener {
   private lateinit var databaseHelper: DatabaseHelper
   private lateinit var binding : ActivityChatBinding
   private lateinit var currentIDConversation : String
   private lateinit var messageManager: MessageManager
   private lateinit var conversationManager: ConversationManager
   private lateinit var drawer : Drawer
+  private lateinit var chatManager: ChatManager
+  private lateinit var chatResponseHandler: ChatResponseHandler
+  private lateinit var chatWorkerBuilder: ChatWorkerBuilder
+  private lateinit var conversionSharedPreferences: ConversionSharedPreferences
   private val REQUEST_REC_AUDIO_PERMISSION = 1
-  private val isEnable = MutableLiveData<Boolean>()
+  private val isRecordingAudio = MutableLiveData<Boolean>()
   private val STATE_WAITING_RESPONSE_STR = "ChatGPT are typing..."
   private val STATE_WAITING_RECODING_STR = "ChatGPT are hearing..."
+  private var backPressedOnce = false
+  private val uiScope = CoroutineScope(Dispatchers.Main)
     override fun onCreate(savedInstanceState: Bundle?) {
       super.onCreate(savedInstanceState)
       binding = ActivityChatBinding.inflate(layoutInflater)
@@ -87,17 +103,29 @@ class ChatActivity : AppCompatActivity() {
     }
   }
 
+  override fun onBackPressed() {
+    if (backPressedOnce) {
+      finishAffinity()
+    }
+
+    this.backPressedOnce = true
+    Toast.makeText(this, "Press back again to exit", Toast.LENGTH_SHORT).show()
+
+    Handler().postDelayed({
+      backPressedOnce = false
+    }, 2000)
+  }
+
   override fun onDestroy() {
     super.onDestroy()
-    Speech.getInstance().shutdown();
+    //Protect app from "If user open app and close app so quickly and Speech not init at time"
+    try{
+      Speech.getInstance().shutdown();
+    }catch (e : Exception){}
   }
   private fun addEvents() {
-    binding.imgbtnClearMemory.setOnClickListener(){
-      try{
-        val sharedPrefs = getSharedPreferences("CONVERTION_CHATGPT", Context.MODE_PRIVATE)
-        sharedPrefs.edit().remove(currentIDConversation).apply()
-        Toast.makeText(this, "Remove ChatGPT Memory Completed!", Toast.LENGTH_SHORT).show()
-      }catch (e : Exception){}
+    binding.imgbtnSettingBottomDialog.setOnClickListener(){
+      handleSettingDialog()
     }
     binding.imgbtnMenuConversation.setOnClickListener(){
       drawer.openDrawer()
@@ -112,11 +140,20 @@ class ChatActivity : AppCompatActivity() {
         ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.RECORD_AUDIO), REQUEST_REC_AUDIO_PERMISSION)
       }
     }
-
     binding.imgbtnSendRequest.setOnClickListener(){
       if(binding.imgbtnSendRequest.isEnabled){
         if(binding.edtxtRequestText.text.isNotEmpty()){
-          handleEventRequestResponse(binding.edtxtRequestText.text.toString())
+          chatResponseHandler.handleEventRequestResponse(
+            binding.edtxtRequestText.text.toString(),
+            currentIDConversation,
+            this@ChatActivity,
+            this@ChatActivity,
+            databaseHelper,
+            binding,
+            messageManager,
+            chatManager,
+            conversationManager
+          )
         }else{
           Toast.makeText(this, "Please enter the question", Toast.LENGTH_SHORT).show()
         }
@@ -125,49 +162,19 @@ class ChatActivity : AppCompatActivity() {
       }
     }
   }
-
   private fun handleDisplayChatMessages(){
-    for(conver in conversationManager.getConversations()){
-      if(conver.id.toString() == currentIDConversation){
-        binding.txtConversationName.text = conver.name
-      }
+    if(conversationManager.getConversations().size == 1){
+      currentIDConversation = conversationManager.getConversations()[0].id.toString()
+      conversionSharedPreferences.saveStringToSharedPreferences(currentIDConversation.toString())
     }
-    val recyclerView = binding.rcvChatConversation
-    recyclerView.layoutManager = LinearLayoutManager(this)
-    recyclerView.adapter = MessageAdapter(this, messageManager, binding)
-    recyclerView.scrollToPosition(messageManager.getMessages().size - 1)
+    initMessageManager()
+    Log.i("ChatActivity", "Display Chat Messages with ID CONVERSATION $currentIDConversation")
+    chatManager.handleDisplayChatMessages(currentIDConversation, this@ChatActivity, conversationManager, messageManager)
   }
-
-  private fun handleEventRequestResponse(input: String) {
-    binding.edtxtRequestText.setText("")
-    binding.imgbtnSendRequest.isEnabled = false
-    val resultData = handleRequestResponseChatGPT(input)
-    resultData.observe(this, Observer { result ->
-      if (result.containsKey("Success")) {
-        binding.imgbtnSendRequest.isEnabled = true
-        val data = result["Success"]
-        val clientMessID = databaseHelper.addMessage(currentIDConversation.toInt(), DatabaseHelper.SENDER_CLIENT, input, System.currentTimeMillis().toString())
-        val severMessID = databaseHelper.addMessage(currentIDConversation.toInt(), DatabaseHelper.SENDER_SEVER, data, System.currentTimeMillis().toString())
-        if(clientMessID != -1 && severMessID != -1){
-          var clientMess : Message = databaseHelper.getMessage(clientMessID, currentIDConversation.toInt())
-          var severMess : Message = databaseHelper.getMessage(severMessID, currentIDConversation.toInt())
-          messageManager.addMessage(clientMess)
-          messageManager.addMessage(severMess)
-          handleDisplayChatMessages()
-        }
-      // do something with the data
-      } else if (result.containsKey("Failure")) {
-        binding.imgbtnSendRequest.isEnabled = true
-        val error = result["Failure"]
-        Toast.makeText(this, error.toString(), Toast.LENGTH_LONG).show()
-      }
-    })
-  }
-
   private fun handleSpeechToText(){
-    if(isEnable.value == false){
+    if(isRecordingAudio.value == false){
       try {
-        isEnable.value = true
+        isRecordingAudio.value = true
         // you must have android.permission.RECORD_AUDIO granted at this point
         Speech.getInstance().startListening(object : SpeechDelegate {
           override fun onStartOfSpeech() {
@@ -205,53 +212,61 @@ class ChatActivity : AppCompatActivity() {
       }
     }else{
       Speech.getInstance().stopListening()
-      isEnable.value = false
+      isRecordingAudio.value = false
     }
 
 
   }
-
-
-  private fun handleRequestResponseChatGPT(inputStr: String): LiveData<HashMap<String, String>> {
-    binding.txtStateWhileWaitingResponse.visibility = View.VISIBLE
-    val resultData = MutableLiveData<HashMap<String, String>>()
-    val workRequest = buildGPTMessageWorkerRequest(inputStr)
-    WorkManager.getInstance(this).enqueue(workRequest)
-    val workInfo = WorkManager.getInstance(this).getWorkInfoByIdLiveData(workRequest.id)
-    workInfo.observe(this, Observer { workInfo ->
-      if (workInfo != null) {
-        if (workInfo.state == WorkInfo.State.SUCCEEDED) {
-          val data = workInfo.outputData.getString(ChatGPTMessageWorker.DATA_SUCCESS)
-          streamLog { "gpt message worker success: $data" }
-          val result = HashMap<String, String>()
-          result["Success"] = data.toString()
-          resultData.postValue(result)
-          binding.txtStateWhileWaitingResponse.visibility = View.GONE
-        } else if (workInfo.state == WorkInfo.State.FAILED) {
-          val error = workInfo.outputData.getString(ChatGPTMessageWorker.DATA_FAILURE) ?: ""
-          streamLog { "gpt message worker failed: $error" }
-          val result = HashMap<String, String>()
-          result["Failure"] = error.toString()
-          resultData.postValue(result)
-          binding.txtStateWhileWaitingResponse.visibility = View.GONE
-        }
-      }
-    })
-    return resultData
-  }
-
-
-
-    private fun addControls() {
+  private fun addControls() {
+      initSharedPref()
       handleSQLite()
       initMessageManager()
       initConversationManager()
+      initWorkerChat()
       handleDrawer()
       handleDisplayChatMessages()
       checkRecordAudio()
       initDefaultValue()
   }
+  private fun showDialogToast(tittle : String, subcription : String){
+    val awesomeDialog = AwesomeDialog.build(this)
+      .title(tittle)
+      .body(subcription)
+      .icon(R.drawable.baseline_check_circle_24)
+      .position(AwesomeDialog.POSITIONS.CENTER)
+      .onNegative("Goto ChatGPT"){}
+    awesomeDialog.setCancelable(true)
+    awesomeDialog.setCanceledOnTouchOutside(true)
+  }
+  private fun showDialogToast(tittle : String, subcription : String, icon : Int){
+    val awesomeDialog = AwesomeDialog.build(this)
+      .title(tittle)
+      .body(subcription)
+      .icon(icon)
+      .position(AwesomeDialog.POSITIONS.CENTER)
+      .onNegative("Goto ChatGPT"){}
+    awesomeDialog.setCancelable(true)
+    awesomeDialog.setCanceledOnTouchOutside(true)
+  }
 
+  private fun handleSettingDialog() {
+    ModalBottomSheetDialog.Builder()
+      .setHeader("Extended Function")
+      .add(R.menu.setting)
+      .setRoundedModal(true)
+      .setHeaderLayout(R.layout.setting_dialog_header)
+      .setItemLayout(R.layout.setting_dialog_item)
+      .show(supportFragmentManager, "Haaa")
+  }
+
+  private fun initSharedPref() {
+    conversionSharedPreferences = ConversionSharedPreferences(this@ChatActivity)
+  }
+  private fun initWorkerChat() {
+    chatManager = ChatManager(binding)
+    chatResponseHandler = ChatResponseHandler(binding)
+    chatWorkerBuilder = ChatWorkerBuilder(currentIDConversation)
+  }
   private fun handleDrawer(){
     val viewGroup = LayoutInflater.from(this).inflate(R.layout.item_top_drawer, null) as ViewGroup
     val mcv_new_chat : MaterialCardView = viewGroup.findViewById(R.id.mcv_new_chat)
@@ -272,22 +287,39 @@ class ChatActivity : AppCompatActivity() {
       }
     }
     mcv_delete_all_conversation.setOnClickListener(){
-      for(conversation in conversationManager.getConversations()){
-        if(conversationManager.getConversations().size > 1){
-          val isDeletedConversation = databaseHelper.deleteConversation(conversation.id.toInt())
-          if(isDeletedConversation){
-            initConversationManager()
-            val isDeletedMessages = databaseHelper.deleteAllMessagesWithConversationId(conversation.id.toInt())
+      val mBottomSheetDialog = BottomSheetMaterialDialog.Builder(this)
+        .setTitle("Remove?")
+        .setMessage("Are you sure want to remove all conversations?")
+        .setCancelable(false)
+        .setPositiveButton("Remove", R.drawable.baseline_delete_outline_24
+        ) { dialogInterface, which ->
+          for(conversation in conversationManager.getConversations()){
+            if(conversationManager.getConversations().size > 1){
+              val isDeletedConversation = databaseHelper.deleteConversation(conversation.id.toInt())
+              if(isDeletedConversation){
+                initConversationManager()
+                val isDeletedMessages = databaseHelper.deleteAllMessagesWithConversationId(conversation.id.toInt())
+              }
+            }
           }
+          initConversationManager()
+          currentIDConversation = conversationManager.getConversations()[0].id.toString()
+          drawer.closeDrawer()
+          handleDrawer()
+          initMessageManager()
+          handleDisplayChatMessages()
+          showDialogToast("Completed", "Remove all conversation completed")
+          dialogInterface.dismiss()
         }
-      }
-      Toast.makeText(this@ChatActivity, "Delete all conversation completed!", Toast.LENGTH_SHORT).show();
-      initConversationManager()
-      currentIDConversation = conversationManager.getConversations()[0].id.toString()
-      drawer.closeDrawer()
-      handleDrawer()
-      initMessageManager()
-      handleDisplayChatMessages()
+        .setNegativeButton("Cancel", R.drawable.baseline_close_24
+        ) { dialogInterface, which ->
+          dialogInterface.dismiss()
+        }
+        .build()
+
+// Show Dialog
+      mBottomSheetDialog.show()
+
     }
     drawer = DrawerBuilder()
       .withActivity(this)
@@ -357,36 +389,6 @@ class ChatActivity : AppCompatActivity() {
                   flatDialog.dismiss()
                 }
                 .show()
-//              val dialog = object : DialogToolConversation(this@ChatActivity) {
-//
-//                override fun onNameConversationChange(s: String) {
-//                  super.onNameConversationChange(s)
-//                  databaseHelper.updateConversation(drawerItem.contentDescription.toString().toInt(), s)
-//                  initConversationManager()
-//                  handleDrawer()
-//                }
-//
-//                override fun onRemoveClicked() {
-//                  initConversationManager()
-//                  if(conversationManager.getConversations().size > 1){
-//                    val isDeletedConversation = databaseHelper.deleteConversation(currentIDConversation.toInt())
-//                    if(isDeletedConversation){
-//                      val isDeletedMessages = databaseHelper.deleteAllMessagesWithConversationId(currentIDConversation.toInt())
-//                      if(isDeletedMessages){
-//                        initConversationManager()
-//                        currentIDConversation = conversationManager.getConversations()[0].id.toString()
-//                        handleDrawer()
-//                        initMessageManager()
-//                        handleDisplayChatMessages()
-//                      }
-//                    }
-//                  }else{
-//                    Toast.makeText(context, "There must be at least one Message that exists!", Toast.LENGTH_SHORT).show();
-//                  }
-//                }
-//              }
-//              dialog.setTitle("My Dialog")
-//              dialog.show()
             }
           }
           return true
@@ -410,7 +412,6 @@ class ChatActivity : AppCompatActivity() {
     }
     drawer.addItem(DividerDrawerItem())
   }
-
   private fun initConversationManager() {
     conversationManager = ConversationManager()
     val cursor = databaseHelper.allConversations
@@ -420,66 +421,43 @@ class ChatActivity : AppCompatActivity() {
     }
     cursor.close()
   }
-
   private fun initDefaultValue() {
-    isEnable.value = false
+    isRecordingAudio.value = false
   }
-
   private fun initMessageManager() {
     messageManager = databaseHelper.getMessageManager(currentIDConversation.toInt())
   }
-
   private fun handleSQLite() {
     handleFirstInit()
     handleDataCurrentConversation()
   }
-
   private fun handleDataCurrentConversation() {
-    currentIDConversation = getStringFromSharedPreferences(this).toString()
+    currentIDConversation = conversionSharedPreferences.getStringFromSharedPreferences().toString()
   }
-
   private fun handleFirstInit() {
     databaseHelper = DatabaseHelper(this)
-    val conversationID : String = getStringFromSharedPreferences(this).toString()
+    val conversationID : String = conversionSharedPreferences.getStringFromSharedPreferences().toString()
+    println("dddddddddddddd  $conversationID")
     if(conversationID == "NULL"){
-      val conversationId = databaseHelper.addConversation("Test")
+      val conversationId = databaseHelper.addConversation("New Conversation")
       if(conversationId != -1){
-        saveStringToSharedPreferences(this, conversationId.toString())
+        conversionSharedPreferences.saveStringToSharedPreferences(conversationId.toString())
+        currentIDConversation = conversationId.toString()
+        databaseHelper.addMessage(currentIDConversation.toInt(),
+            DatabaseHelper.SENDER_SEVER,
+            getString(R.string.chatgpt_welcome_message),
+            System.currentTimeMillis().toString())
+        initConversationManager()
+        initMessageManager()
+        initWorkerChat()
+        handleDisplayChatMessages()
       }
     }
   }
 
-  private fun buildGPTMessageWorkerRequest(text: String): OneTimeWorkRequest {
-    val constraints = Constraints.Builder()
-      .setRequiredNetworkType(NetworkType.CONNECTED)
-      .build()
-
-    val data = Data.Builder()
-      .putString(ChatGPTMessageWorker.DATA_TEXT, text)
-      .putString(ChatGPTMessageWorker.DATA_CHANNEL_ID, "8e68d7b8-b131-4262-8b78-8ebc1d1935d8")
-      .putString(ChatGPTMessageWorker.CONVERSATION_ID, currentIDConversation)
-      .build()
-
-    return OneTimeWorkRequest.Builder(ChatGPTMessageWorker::class.java)
-      .setConstraints(constraints)
-      .setInputData(data)
-      .build()
-  }
-
-  fun saveStringToSharedPreferences(context: Context, value: String) {
-    val sharedPreferences = context.getSharedPreferences("CONVERTION_CHATGPT", Context.MODE_PRIVATE)
-    val editor = sharedPreferences.edit()
-    editor.putString("CONVERTION_TEXT_ID", value)
-    editor.apply()
-  }
-  fun getStringFromSharedPreferences(context: Context): String? {
-    val sharedPreferences = context.getSharedPreferences("CONVERTION_CHATGPT", Context.MODE_PRIVATE)
-    return sharedPreferences.getString("CONVERTION_TEXT_ID", "NULL")
-  }
-
   private fun checkRecordAudio() {
-    isEnable.observe(this, Observer { isLoaded ->
-      if (isLoaded) {
+    isRecordingAudio.observe(this, Observer { RECORDING ->
+      if (RECORDING) {
         binding.imgbtnSendRequest.isEnabled = false
         binding.txtStateChatgpt.text = STATE_WAITING_RECODING_STR
         binding.txtStateWhileWaitingResponse.visibility = View.VISIBLE
@@ -491,6 +469,32 @@ class ChatActivity : AppCompatActivity() {
         binding.imgbtnSpeechToText.setImageResource(R.drawable.icon_voice)
       }
     })
+  }
+
+  /**
+   * Setting Dialog Event
+   */
+  override fun onItemSelected(tag: String, item: Item) {
+    if(item.id == R.id.action_clear_memory){
+      try{
+        val sharedPrefs = getSharedPreferences("CONVERTION_CHATGPT", Context.MODE_PRIVATE)
+        sharedPrefs.edit().remove(currentIDConversation).apply()
+        showDialogToast("Completed", "Remove ChatGPT Memory Completed")
+      }catch (e : Exception){}
+    }else if(item.id == R.id.action_logout){
+      val preferences = Preferences(this@ChatActivity)
+      preferences.authorization = ""
+      preferences.cookie = ""
+      preferences.userAgent = ""
+      val intent = Intent(this, LoginActivity::class.java)
+      intent.putExtra("MODE", "SIGN_OUT")
+      finish()
+      startActivity(intent)
+    }else if(item.id == R.id.action_lang_spec_boost){
+      showDialogToast( "Feature Not Available Now!",
+        "This feature help you get faster response from ChatGPT when using specific language like Vietnamese ... It will support up to 58 language",
+        R.drawable.round_info_24)
+    }
   }
 
 }
