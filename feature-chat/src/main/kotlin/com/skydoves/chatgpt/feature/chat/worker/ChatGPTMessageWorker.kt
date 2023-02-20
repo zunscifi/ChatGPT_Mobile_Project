@@ -60,7 +60,7 @@ class ChatGPTMessageWorker @AssistedInject constructor(
     val sTemp : String
     val requestText : String
     if(previous_text != "NULL") {
-     sTemp = "[Contents of the previous conversation : $previous_text (Questions are separated by \"@0@\", from left to right is oldest to newest)]";
+     sTemp = "[Contents of the previous conversation : $previous_text]";
     }else{
       sTemp = "NULL"
     }
@@ -83,19 +83,11 @@ class ChatGPTMessageWorker @AssistedInject constructor(
     val response = repository.sendMessage(request)
     return if (response.isSuccess) {
       streamLog { "worker success!" }
-      saveStringToSharedPreferences(context, text, conversation_id)
       Result.success(Data.Builder().putString(DATA_SUCCESS, response.getOrThrow()).build())
     } else {
       streamLog { "worker failure!" }
       Result.failure(Data.Builder().putString(DATA_FAILURE, response.messageOrNull ?: "").build())
     }
-  }
-  fun saveStringToSharedPreferences(context: Context, value: String, conversation_id: String) {
-    val sharedPreferences = context.getSharedPreferences("CONVERTION_CHATGPT", Context.MODE_PRIVATE)
-    val s : String = sharedPreferences.getString(conversation_id, "NULL").toString()
-    val editor = sharedPreferences.edit()
-    editor.putString(conversation_id, "$s@0@$value")
-    editor.apply()
   }
   fun getStringFromSharedPreferences(context: Context, conversation_id: String): String? {
     val sharedPreferences = context.getSharedPreferences("CONVERTION_CHATGPT", Context.MODE_PRIVATE)

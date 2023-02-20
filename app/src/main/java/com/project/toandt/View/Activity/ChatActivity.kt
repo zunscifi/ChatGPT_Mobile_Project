@@ -1,12 +1,16 @@
 package com.project.toandt.View.Activity
 
 import android.Manifest
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
+import android.provider.MediaStore
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -61,6 +65,7 @@ import net.gotev.speech.SpeechDelegate
 import net.gotev.speech.SpeechRecognitionNotAvailable
 import nl.invissvenska.modalbottomsheetdialog.Item
 import nl.invissvenska.modalbottomsheetdialog.ModalBottomSheetDialog
+import java.io.ByteArrayOutputStream
 
 class ChatActivity : AppCompatActivity(), ModalBottomSheetDialog.Listener {
   private lateinit var databaseHelper: DatabaseHelper
@@ -74,6 +79,7 @@ class ChatActivity : AppCompatActivity(), ModalBottomSheetDialog.Listener {
   private lateinit var chatWorkerBuilder: ChatWorkerBuilder
   private lateinit var conversionSharedPreferences: ConversionSharedPreferences
   private val REQUEST_REC_AUDIO_PERMISSION = 1
+  private val REQUEST_SHARE_SCREEN_PERMISSION = 2
   private val isRecordingAudio = MutableLiveData<Boolean>()
   private val STATE_WAITING_RESPONSE_STR = "ChatGPT are typing..."
   private val STATE_WAITING_RECODING_STR = "ChatGPT are hearing..."
@@ -96,7 +102,15 @@ class ChatActivity : AppCompatActivity(), ModalBottomSheetDialog.Listener {
         if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
           // Permission has been granted, call the hello function
           handleSpeechToText()
-        } else {
+        } else  {
+          // Permission has been denied, handle it
+        }
+      }
+      REQUEST_SHARE_SCREEN_PERMISSION ->{
+        if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+          // Permission has been granted, call the hello function
+          handleShareScreen()
+        } else  {
           // Permission has been denied, handle it
         }
       }
@@ -124,6 +138,14 @@ class ChatActivity : AppCompatActivity(), ModalBottomSheetDialog.Listener {
     }catch (e : Exception){}
   }
   private fun addEvents() {
+    binding.imgbtnShareScreen.setOnClickListener(){
+      if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        == PackageManager.PERMISSION_GRANTED) {
+        ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), REQUEST_SHARE_SCREEN_PERMISSION)
+      }else{
+        handleShareScreen()
+      }
+    }
     binding.imgbtnSettingBottomDialog.setOnClickListener(){
       handleSettingDialog()
     }
@@ -161,6 +183,33 @@ class ChatActivity : AppCompatActivity(), ModalBottomSheetDialog.Listener {
         Toast.makeText(this, "Only one message at a time", Toast.LENGTH_SHORT).show()
       }
     }
+  }
+
+  private fun handleShareScreen() {
+    Log.i("ChatActivity", "handleShareScreen started ...")
+    val image = getScreenBitmap(this@ChatActivity)
+    val uri = getImageUri(this@ChatActivity, image)
+    val shareIntent = Intent().apply {
+      action = Intent.ACTION_SEND
+      putExtra(Intent.EXTRA_STREAM, uri)
+      type = "image/png"
+    }
+    startActivity(Intent.createChooser(shareIntent, "Share via"))
+    Log.i("ChatActivity", "handleShareScreen completed")
+  }
+  private fun getScreenBitmap(activity: Activity): Bitmap {
+    val view = activity.window.decorView.rootView
+    view.isDrawingCacheEnabled = true
+    val bitmap = Bitmap.createBitmap(view.drawingCache)
+    view.isDrawingCacheEnabled = false
+    return bitmap
+  }
+
+  private fun getImageUri(context: Context, image: Bitmap): Uri {
+    val bytes = ByteArrayOutputStream()
+    image.compress(Bitmap.CompressFormat.PNG, 100, bytes)
+    val path = MediaStore.Images.Media.insertImage(context.contentResolver, image, "screenshot", null)
+    return Uri.parse(path)
   }
   private fun handleDisplayChatMessages(){
     if(conversationManager.getConversations().size == 1){
@@ -362,6 +411,8 @@ class ChatActivity : AppCompatActivity(), ModalBottomSheetDialog.Listener {
                   val nameConversation = flatDialog.firstTextField
                   databaseHelper.updateConversation(drawerItem.contentDescription.toString().toInt(), nameConversation)
                   initConversationManager()
+                  initMessageManager()
+                  handleDisplayChatMessages()
                   drawer.closeDrawer()
                   handleDrawer()
                   flatDialog.dismiss()
@@ -482,19 +533,23 @@ class ChatActivity : AppCompatActivity(), ModalBottomSheetDialog.Listener {
         showDialogToast("Completed", "Remove ChatGPT Memory Completed")
       }catch (e : Exception){}
     }else if(item.id == R.id.action_logout){
-      val preferences = Preferences(this@ChatActivity)
-      preferences.authorization = ""
-      preferences.cookie = ""
-      preferences.userAgent = ""
-      val intent = Intent(this, LoginActivity::class.java)
-      intent.putExtra("MODE", "SIGN_OUT")
-      finish()
-      startActivity(intent)
+      handleLogout()
     }else if(item.id == R.id.action_lang_spec_boost){
       showDialogToast( "Feature Not Available Now!",
         "This feature help you get faster response from ChatGPT when using specific language like Vietnamese ... It will support up to 58 language",
         R.drawable.round_info_24)
     }
+  }
+
+  public fun handleLogout(){
+    val preferences = Preferences(this@ChatActivity)
+    preferences.authorization = ""
+    preferences.cookie = ""
+    preferences.userAgent = ""
+    val intent = Intent(this, LoginActivity::class.java)
+    intent.putExtra("MODE", "SIGN_OUT")
+    finish()
+    startActivity(intent)
   }
 
 }

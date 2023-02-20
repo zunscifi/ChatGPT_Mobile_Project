@@ -2,11 +2,13 @@ package com.project.toandt.View.Activity
 
 import android.content.Intent
 import android.content.SharedPreferences
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.webkit.CookieManager
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import com.google.firebase.messaging.reporting.MessagingClientEvent.SDKPlatform
 import com.project.toandt.Control.Database.DatabaseHelper
 import com.skydoves.chatgpt.databinding.ActivityLoginBinding
 import com.skydoves.chatgpt.feature.login.LOGIN_COMPLETED
@@ -24,11 +26,13 @@ class LoginActivity : ComponentActivity() {
       binding = ActivityLoginBinding.inflate(layoutInflater)
       val view = binding.root
       setContentView(view)
-      val pref: SharedPreferences = getSharedPreferences("pref", MODE_PRIVATE)
-      if (!pref.getBoolean("welcomed", false)) {
-        startActivity(Intent(this, SplassActivity::class.java))
-        pref.edit().putBoolean("welcomed", true).apply()
-      }
+//      if (Build.VERSION.SDK_INT > Build.VERSION_CODES.M) {
+//        val pref: SharedPreferences = getSharedPreferences("pref", MODE_PRIVATE)
+//        if (!pref.getBoolean("welcomed", false)) {
+//          startActivity(Intent(this, SplassActivity::class.java))
+//          pref.edit().putBoolean("welcomed", true).apply()
+//        }
+//      }
       addControls()
       addEvents()
     }

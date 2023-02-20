@@ -9,10 +9,12 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import com.project.toandt.Control.ChatGPTMemoryManager.ChatHistory
 import com.project.toandt.Control.Database.DatabaseHelper
 import com.project.toandt.Model.ConversationManager
 import com.project.toandt.Model.Message
 import com.project.toandt.Model.MessageManager
+import com.project.toandt.View.Activity.ChatActivity
 import com.skydoves.chatgpt.R
 import com.skydoves.chatgpt.databinding.ActivityChatBinding
 import com.skydoves.chatgpt.feature.chat.worker.ChatGPTMessageWorker
@@ -24,6 +26,7 @@ class ChatResponseHandler(private val binding: ActivityChatBinding) {
                                  context : Context, lifecycleOwner: LifecycleOwner,
                                  databaseHelper : DatabaseHelper, binding: ActivityChatBinding,
                                  messageManager : MessageManager, chatManager: ChatManager, conversationManager: ConversationManager ) {
+    val chatHistory = ChatHistory(context, currentIDConversation)
     binding.edtxtRequestText.setText("")
     binding.imgbtnSendRequest.isEnabled = false
     val clientMessID = databaseHelper.addMessage(currentIDConversation.toInt(), DatabaseHelper.SENDER_CLIENT, input, System.currentTimeMillis().toString())
@@ -31,6 +34,7 @@ class ChatResponseHandler(private val binding: ActivityChatBinding) {
       val clientMess : Message = databaseHelper.getMessage(clientMessID, currentIDConversation.toInt())
       messageManager.addMessage(clientMess)
       chatManager.handleDisplayChatMessages(currentIDConversation, context, conversationManager, messageManager)
+      chatHistory.addMessage("User: $input")
     }
     val resultData = handleRequestResponseChatGPT(input, currentIDConversation, context, lifecycleOwner)
     resultData.observe(lifecycleOwner, Observer { result ->
@@ -42,6 +46,7 @@ class ChatResponseHandler(private val binding: ActivityChatBinding) {
           val severMess : Message = databaseHelper.getMessage(severMessID, currentIDConversation.toInt())
           messageManager.addMessage(severMess)
           chatManager.handleDisplayChatMessages(currentIDConversation, context, conversationManager, messageManager )
+          chatHistory.addMessage("ChatGPT: $data")
         }else{
           val severMessError = Message( -1 * System.currentTimeMillis(),
             currentIDConversation.toLong(), DatabaseHelper.SENDER_SEVER,
@@ -55,8 +60,11 @@ class ChatResponseHandler(private val binding: ActivityChatBinding) {
         val error = result["Failure"]
         val severMessError = Message( -1 * System.currentTimeMillis(),
           currentIDConversation.toLong(), DatabaseHelper.SENDER_SEVER,
-          context.getString(R.string.EROR_MESSAGE), System.currentTimeMillis())
+          "Your session was expired. Please Login again to keep using.", System.currentTimeMillis())
         messageManager.addMessage(severMessError)
+        if(context is ChatActivity){
+          context.handleLogout()
+        }
       }
     })
   }

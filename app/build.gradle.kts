@@ -29,7 +29,7 @@ android {
 
   defaultConfig {
     applicationId = "com.skydoves.chatgpt"
-    minSdk = 23
+    minSdk = 21
     targetSdk = Configurations.targetSdk
     versionCode = Configurations.versionCode
     versionName = Configurations.versionName
@@ -46,6 +46,23 @@ android {
       matchingFallbacks += listOf("release")
       isDebuggable = false
     }
+    getByName("release") {
+      // Enables code shrinking, obfuscation, and optimization for only
+      // your project's release build type.
+      isMinifyEnabled = true
+
+      // Enables resource shrinking, which is performed by the
+      // Android Gradle plugin.
+      isShrinkResources = true
+
+      // Includes the default ProGuard rules files that are packaged with
+      // the Android Gradle plugin. To learn more, go to the section about
+      // R8 configuration files.
+      proguardFiles(
+        getDefaultProguardFile("proguard-android-optimize.txt"),
+        "proguard-rules.pro"
+      )
+    }
   }
   buildFeatures {
     viewBinding = true
@@ -54,7 +71,6 @@ android {
 }
 
 dependencies {
-  implementation ("com.github.ErrorxCode:ModernOnboarding:1.0.0")
   implementation ("com.github.chnouman:AwesomeDialog:1.0.5")
   implementation ("dev.shreyaspatil.MaterialDialog:MaterialDialog:2.2.3")
   implementation ("com.github.invissvenska:ModalBottomSheetDialog:1.0.5")

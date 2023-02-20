@@ -15,5 +15,5 @@
      limitations under the License.
 -->
 <resources>
-  <string name="toast_error">[Unauthorized] Your session was expired. Please re-launch or re-install this app.</string>
+  <string name="toast_error">Your session was expired. Please Login again to keep using.</string>
 </resources>

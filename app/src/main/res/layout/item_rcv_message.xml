@@ -34,7 +34,7 @@
       android:id="@+id/tv_response_text"
       android:gravity="center |left"
       android:layout_marginLeft="10dp"
-      android:layout_marginRight="20dp"
+      android:layout_marginRight="40dp"
       android:layout_marginTop="20dp"
       android:layout_marginBottom="20dp"
       android:layout_width="match_parent"
@@ -44,5 +44,18 @@
       android:text="Hello! How can I help you today? "
       android:layout_weight="0.8"
       tools:ignore="RtlHardcoded" />
+  </LinearLayout>
+  <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:gravity="center |right">
+    <ImageButton
+      android:id="@+id/imgbtn_copy_message"
+      android:layout_width="40dp"
+      android:layout_height="40dp"
+      android:layout_marginTop="10dp"
+      android:background="?selectableItemBackgroundBorderless"
+      android:src="@drawable/baseline_content_copy_24"/>
   </LinearLayout>
 </RelativeLayout>
