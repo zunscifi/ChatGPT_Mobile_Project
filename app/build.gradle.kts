@@ -58,8 +58,6 @@ dependencies {
   implementation ("com.github.chnouman:AwesomeDialog:1.0.5")
   implementation ("dev.shreyaspatil.MaterialDialog:MaterialDialog:2.2.3")
   implementation ("com.github.invissvenska:ModalBottomSheetDialog:1.0.5")
-  implementation ("com.google.mlkit:translate:17.0.1")
-  implementation ("com.google.mlkit:language-id:17.0.4")
   implementation ("com.github.mejdi14:Flat-Dialog-Android:1.0.5")
   implementation ("co.zsmb:materialdrawer-kt:3.0.0")
   implementation ("net.gotev:speech:1.6.2")
