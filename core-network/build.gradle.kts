@@ -48,5 +48,5 @@ dependencies {
   api(libs.sandwich)
 }
 android {
-    namespace = "com.skydoves.chatgpt.core.network"
+    namespace = "com.toandtpro.chatgpt.core.network"
 }

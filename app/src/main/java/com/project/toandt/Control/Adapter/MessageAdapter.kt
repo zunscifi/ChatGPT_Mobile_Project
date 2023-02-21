@@ -18,8 +18,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.project.toandt.Control.Database.DatabaseHelper
 import com.project.toandt.Model.Message
 import com.project.toandt.Model.MessageManager
-import com.skydoves.chatgpt.R
-import com.skydoves.chatgpt.databinding.ActivityChatBinding
+import com.toandtpro.chatgpt.R
+import com.toandtpro.chatgpt.databinding.ActivityChatBinding
 
 
 class MessageAdapter(private val context: Context, private val messageManager: MessageManager, private val binding: ActivityChatBinding) : RecyclerView.Adapter<MessageAdapter.ViewHolder>() {

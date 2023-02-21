@@ -2,7 +2,7 @@ plugins {
     `kotlin-dsl`
 }
 
-group = "com.skydoves.chatgpt.buildlogic"
+group = "com.toandtpro.chatgpt.buildlogic"
 
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8

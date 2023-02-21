@@ -37,5 +37,5 @@ dependencies {
   api(libs.androidx.compose.constraintlayout)
 }
 android {
-    namespace = "com.skydoves.chatgpt.core.designsystem"
+    namespace = "com.toandtpro.chatgpt.core.designsystem"
 }

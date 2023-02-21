@@ -30,6 +30,16 @@ import com.example.awesomedialog.onNegative
 import com.example.awesomedialog.position
 import com.example.awesomedialog.title
 import com.example.flatdialoglibrary.dialog.FlatDialog
+import com.google.android.gms.ads.AdError
+import com.google.android.gms.ads.AdListener
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdView
+import com.google.android.gms.ads.FullScreenContentCallback
+import com.google.android.gms.ads.LoadAdError
+import com.google.android.gms.ads.MobileAds
+import com.google.android.gms.ads.RequestConfiguration
+import com.google.android.gms.ads.interstitial.InterstitialAd
+import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
 import com.google.android.material.card.MaterialCardView
 import com.mikepenz.materialdrawer.Drawer
 import com.mikepenz.materialdrawer.DrawerBuilder
@@ -45,15 +55,16 @@ import com.project.toandt.Control.WorkerChat.ChatWorkerBuilder
 import com.project.toandt.Model.Conversation
 import com.project.toandt.Model.ConversationManager
 import com.project.toandt.Model.MessageManager
-import com.skydoves.chatgpt.R
-import com.skydoves.chatgpt.core.network.AUTHORIZATION
-import com.skydoves.chatgpt.core.network.COOKIE
-import com.skydoves.chatgpt.core.network.USER_AGENT
-import com.skydoves.chatgpt.core.preferences.Preferences
-import com.skydoves.chatgpt.databinding.ActivityChatBinding
-import com.skydoves.chatgpt.feature.login.ChatGPTLogin
-import com.skydoves.chatgpt.feature.login.LOGIN_COMPLETED
-import com.skydoves.chatgpt.feature.login.LoginGPT
+import com.toandtpro.chatgpt.ChatGPTApp
+import com.toandtpro.chatgpt.R
+import com.toandtpro.chatgpt.core.network.AUTHORIZATION
+import com.toandtpro.chatgpt.core.network.COOKIE
+import com.toandtpro.chatgpt.core.network.USER_AGENT
+import com.toandtpro.chatgpt.core.preferences.Preferences
+import com.toandtpro.chatgpt.databinding.ActivityChatBinding
+import com.toandtpro.chatgpt.feature.login.ChatGPTLogin
+import com.toandtpro.chatgpt.feature.login.LOGIN_COMPLETED
+import com.toandtpro.chatgpt.feature.login.LoginGPT
 import dev.shreyaspatil.MaterialDialog.AbstractDialog
 import dev.shreyaspatil.MaterialDialog.BottomSheetMaterialDialog
 import dev.shreyaspatil.MaterialDialog.interfaces.DialogInterface
@@ -84,17 +95,22 @@ class ChatActivity : AppCompatActivity(), ModalBottomSheetDialog.Listener {
   private val STATE_WAITING_RESPONSE_STR = "ChatGPT are typing..."
   private val STATE_WAITING_RECODING_STR = "ChatGPT are hearing..."
   private var backPressedOnce = false
+  private var interstitialAd: InterstitialAd? = null
+  private var adIsLoading: Boolean = false
   private val uiScope = CoroutineScope(Dispatchers.Main)
-    override fun onCreate(savedInstanceState: Bundle?) {
+  override fun onCreate(savedInstanceState: Bundle?) {
       super.onCreate(savedInstanceState)
       binding = ActivityChatBinding.inflate(layoutInflater)
       val view = binding.root
       setContentView(view)
+      initInterAds()
       addControls()
       addEvents()
       Speech.init(this, packageName);
     }
-
+  override fun onResume() {
+    super.onResume()
+  }
   override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
     super.onRequestPermissionsResult(requestCode, permissions, grantResults)
     when (requestCode) {
@@ -116,7 +132,6 @@ class ChatActivity : AppCompatActivity(), ModalBottomSheetDialog.Listener {
       }
     }
   }
-
   override fun onBackPressed() {
     if (backPressedOnce) {
       finishAffinity()
@@ -129,7 +144,6 @@ class ChatActivity : AppCompatActivity(), ModalBottomSheetDialog.Listener {
       backPressedOnce = false
     }, 2000)
   }
-
   override fun onDestroy() {
     super.onDestroy()
     //Protect app from "If user open app and close app so quickly and Speech not init at time"
@@ -184,7 +198,6 @@ class ChatActivity : AppCompatActivity(), ModalBottomSheetDialog.Listener {
       }
     }
   }
-
   private fun handleShareScreen() {
     Log.i("ChatActivity", "handleShareScreen started ...")
     val image = getScreenBitmap(this@ChatActivity)
@@ -204,7 +217,6 @@ class ChatActivity : AppCompatActivity(), ModalBottomSheetDialog.Listener {
     view.isDrawingCacheEnabled = false
     return bitmap
   }
-
   private fun getImageUri(context: Context, image: Bitmap): Uri {
     val bytes = ByteArrayOutputStream()
     image.compress(Bitmap.CompressFormat.PNG, 100, bytes)
@@ -297,7 +309,6 @@ class ChatActivity : AppCompatActivity(), ModalBottomSheetDialog.Listener {
     awesomeDialog.setCancelable(true)
     awesomeDialog.setCanceledOnTouchOutside(true)
   }
-
   private fun handleSettingDialog() {
     ModalBottomSheetDialog.Builder()
       .setHeader("Extended Function")
@@ -307,7 +318,6 @@ class ChatActivity : AppCompatActivity(), ModalBottomSheetDialog.Listener {
       .setItemLayout(R.layout.setting_dialog_item)
       .show(supportFragmentManager, "Haaa")
   }
-
   private fun initSharedPref() {
     conversionSharedPreferences = ConversionSharedPreferences(this@ChatActivity)
   }
@@ -317,7 +327,9 @@ class ChatActivity : AppCompatActivity(), ModalBottomSheetDialog.Listener {
     chatWorkerBuilder = ChatWorkerBuilder(currentIDConversation)
   }
   private fun handleDrawer(){
+    MobileAds.initialize(this) {}
     val viewGroup = LayoutInflater.from(this).inflate(R.layout.item_top_drawer, null) as ViewGroup
+    val mAdView : AdView = viewGroup.findViewById(R.id.adView)
     val mcv_new_chat : MaterialCardView = viewGroup.findViewById(R.id.mcv_new_chat)
     val mcv_delete_all_conversation : MaterialCardView = viewGroup.findViewById(R.id.mcv_delete_all_conversation)
     mcv_new_chat.setOnClickListener() {
@@ -333,6 +345,9 @@ class ChatActivity : AppCompatActivity(), ModalBottomSheetDialog.Listener {
         handleDrawer()
         initMessageManager()
         handleDisplayChatMessages()
+        if(interstitialAd != null){
+          showInterstitial()
+        }
       }
     }
     mcv_delete_all_conversation.setOnClickListener(){
@@ -359,6 +374,9 @@ class ChatActivity : AppCompatActivity(), ModalBottomSheetDialog.Listener {
           handleDisplayChatMessages()
           showDialogToast("Completed", "Remove all conversation completed")
           dialogInterface.dismiss()
+          if(interstitialAd != null){
+            showInterstitial()
+          }
         }
         .setNegativeButton("Cancel", R.drawable.baseline_close_24
         ) { dialogInterface, which ->
@@ -369,6 +387,38 @@ class ChatActivity : AppCompatActivity(), ModalBottomSheetDialog.Listener {
 // Show Dialog
       mBottomSheetDialog.show()
 
+    }
+    val adRequest = AdRequest.Builder().build()
+    mAdView.loadAd(adRequest)
+    mAdView.adListener = object: AdListener() {
+      override fun onAdClicked() {
+        // Code to be executed when the user clicks on an ad.
+      }
+
+      override fun onAdClosed() {
+        // Code to be executed when the user is about to return
+        // to the app after tapping on an ad.
+      }
+
+      override fun onAdFailedToLoad(adError : LoadAdError) {
+        // Code to be executed when an ad request fails.
+        mAdView.visibility = View.GONE
+      }
+
+      override fun onAdImpression() {
+        // Code to be executed when an impression is recorded
+        // for an ad.
+      }
+
+      override fun onAdLoaded() {
+        // Code to be executed when an ad finishes loading.
+        mAdView.visibility = View.VISIBLE
+      }
+
+      override fun onAdOpened() {
+        // Code to be executed when an ad opens an overlay that
+        // covers the screen.
+      }
     }
     drawer = DrawerBuilder()
       .withActivity(this)
@@ -505,7 +555,6 @@ class ChatActivity : AppCompatActivity(), ModalBottomSheetDialog.Listener {
       }
     }
   }
-
   private fun checkRecordAudio() {
     isRecordingAudio.observe(this, Observer { RECORDING ->
       if (RECORDING) {
@@ -521,7 +570,6 @@ class ChatActivity : AppCompatActivity(), ModalBottomSheetDialog.Listener {
       }
     })
   }
-
   /**
    * Setting Dialog Event
    */
@@ -540,7 +588,6 @@ class ChatActivity : AppCompatActivity(), ModalBottomSheetDialog.Listener {
         R.drawable.round_info_24)
     }
   }
-
   public fun handleLogout(){
     val preferences = Preferences(this@ChatActivity)
     preferences.authorization = ""
@@ -551,5 +598,74 @@ class ChatActivity : AppCompatActivity(), ModalBottomSheetDialog.Listener {
     finish()
     startActivity(intent)
   }
+  public fun initInterAds(){
+    // Initialize the Mobile Ads SDK.
+    MobileAds.initialize(this) {}
 
+    // Set your test devices. Check your logcat output for the hashed device ID to
+    // get test ads on a physical device. e.g.
+    // "Use RequestConfiguration.Builder().setTestDeviceIds(Arrays.asList("ABCDEF012345"))
+    // to get test ads on this device."
+    MobileAds.setRequestConfiguration(
+      RequestConfiguration.Builder().setTestDeviceIds(listOf("ABCDEF012345")).build()
+    )
+    if (!adIsLoading && interstitialAd == null) {
+      adIsLoading = true
+      loadAd()
+    }
+  }
+  private fun loadAd() {
+    var adRequest = AdRequest.Builder().build()
+
+    InterstitialAd.load(
+      this,
+      resources.getString(R.string.inter_ads),
+      adRequest,
+      object : InterstitialAdLoadCallback() {
+        override fun onAdFailedToLoad(adError: LoadAdError) {
+          Log.d("ChatActivity", adError.message)
+          interstitialAd = null
+          adIsLoading = false
+          val error =
+            "domain: ${adError.domain}, code: ${adError.code}, " + "message: ${adError.message}"
+        }
+
+        override fun onAdLoaded(ad: InterstitialAd) {
+          Log.d("ChatActivity", "Ad was loaded.")
+          interstitialAd = ad
+          adIsLoading = false
+        }
+      }
+    )
+  }
+  // Show the ad if it's ready. Otherwise toast and restart the game.
+  private fun showInterstitial() {
+    if (interstitialAd != null) {
+      interstitialAd?.fullScreenContentCallback =
+        object : FullScreenContentCallback() {
+          override fun onAdDismissedFullScreenContent() {
+            Log.d("ChatActivity", "Ad was dismissed.")
+            // Don't forget to set the ad reference to null so you
+            // don't show the ad a second time.
+            interstitialAd = null
+            loadAd()
+          }
+
+          override fun onAdFailedToShowFullScreenContent(adError: AdError) {
+            Log.d("ChatActivity", "Ad failed to show.")
+            // Don't forget to set the ad reference to null so you
+            // don't show the ad a second time.
+            interstitialAd = null
+          }
+
+          override fun onAdShowedFullScreenContent() {
+            Log.d("ChatActivity", "Ad showed fullscreen content.")
+            // Called when ad is dismissed.
+          }
+        }
+      interstitialAd?.show(this)
+    } else {
+      Toast.makeText(this, "Ad wasn't loaded.", Toast.LENGTH_SHORT).show()
+    }
+  }
 }

@@ -6,7 +6,7 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <application
-        android:name=".ChatGPTApp"
+        android:name="com.toandtpro.chatgpt.ChatGPTApp"
         tools:overrideLibrary="com.xcode.onboarding"
         android:allowBackup="true"
         android:allowClearUserData="true"
@@ -18,10 +18,20 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.ChatGPTAndroid"
         tools:targetApi="31">
+      <!-- Sample AdMob App ID: ca-app-pub-3940256099942544~3347511713 -->
+      <meta-data
+        android:name="com.google.android.gms.ads.APPLICATION_ID"
+        android:value="ca-app-pub-3940256099942544~3347511713" />
         <activity
             android:name="com.project.toandt.View.Activity.SplassActivity"
-          android:exported="false"
-          android:theme="@style/Theme.Diary.NoActionBar"  />
+          android:exported="true"
+          android:theme="@style/Theme.Diary.NoActionBarLogin">
+          <intent-filter>
+            <action android:name="android.intent.action.MAIN" />
+
+            <category android:name="android.intent.category.LAUNCHER" />
+          </intent-filter>
+        </activity>
         <activity
             android:name="com.project.toandt.View.Activity.ChatActivity"
             android:exported="false"
@@ -30,11 +40,6 @@
             android:name="com.project.toandt.View.Activity.LoginActivity"
             android:exported="true"
             android:theme="@style/Theme.Diary.NoActionBarLogin">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
         </activity>
 
         <profileable
@@ -43,11 +48,11 @@
 
         <provider
             android:name="androidx.startup.InitializationProvider"
-            android:authorities="com.skydoves.chatgpt.androidx-startup"
+            android:authorities="com.toandtpro.chatgpt.androidx-startup"
             android:exported="false"
             tools:node="merge">
             <meta-data
-                android:name="com.skydoves.chatgpt.initializer.AppInitializer"
+                android:name="com.toandtpro.chatgpt.initializer.AppInitializer"
                 android:value="androidx.startup" />
         </provider>
     </application>

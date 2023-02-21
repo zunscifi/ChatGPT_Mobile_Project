@@ -24,11 +24,11 @@ plugins {
 }
 
 android {
-  namespace = "com.skydoves.chatgpt"
+  namespace = "com.toandtpro.chatgpt"
   compileSdk = Configurations.compileSdk
 
   defaultConfig {
-    applicationId = "com.skydoves.chatgpt"
+    applicationId = "com.toandtpro.chatgpt"
     minSdk = 21
     targetSdk = Configurations.targetSdk
     versionCode = Configurations.versionCode
@@ -71,6 +71,11 @@ android {
 }
 
 dependencies {
+  implementation ("androidx.multidex:multidex:2.0.1")
+  implementation ("com.google.android.gms:play-services-ads:21.5.0")
+  implementation ("androidx.lifecycle:lifecycle-runtime-ktx:2.3.1")
+  implementation ("androidx.lifecycle:lifecycle-process:2.3.1")
+  kapt ("androidx.lifecycle:lifecycle-compiler:2.3.1")
   implementation ("com.github.chnouman:AwesomeDialog:1.0.5")
   implementation ("dev.shreyaspatil.MaterialDialog:MaterialDialog:2.2.3")
   implementation ("com.github.invissvenska:ModalBottomSheetDialog:1.0.5")

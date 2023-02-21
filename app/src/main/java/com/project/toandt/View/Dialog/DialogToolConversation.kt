@@ -10,7 +10,7 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import com.google.android.material.card.MaterialCardView
-import com.skydoves.chatgpt.R
+import com.toandtpro.chatgpt.R
 
 open class DialogToolConversation(context: Context) : Dialog(context, android.R.style.Theme_Black_NoTitleBar_Fullscreen) {
 

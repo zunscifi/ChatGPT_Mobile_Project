@@ -1,5 +1,5 @@
 import com.android.build.gradle.LibraryExtension
-import com.skydoves.chatgpt.configureKotlinAndroid
+import com.toandtpro.chatgpt.configureKotlinAndroid
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.VersionCatalogsExtension

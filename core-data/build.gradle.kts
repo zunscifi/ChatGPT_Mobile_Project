@@ -29,5 +29,5 @@ dependencies {
   ksp(libs.moshi.codegen)
 }
 android {
-  namespace = "com.skydoves.chatgpt.core.data"
+  namespace = "com.toandtpro.chatgpt.core.data"
 }

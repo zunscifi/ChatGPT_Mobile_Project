@@ -27,5 +27,5 @@ dependencies {
   api(libs.androidx.navigation.compose)
 }
 android {
-    namespace = "com.skydoves.chatgpt.core.navigation"
+    namespace = "com.toandtpro.chatgpt.core.navigation"
 }

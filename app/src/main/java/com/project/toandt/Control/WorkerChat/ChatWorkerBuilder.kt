@@ -4,7 +4,7 @@ import androidx.work.Constraints
 import androidx.work.Data
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequest
-import com.skydoves.chatgpt.feature.chat.worker.ChatGPTMessageWorker
+import com.toandtpro.chatgpt.feature.chat.worker.ChatGPTMessageWorker
 
 class ChatWorkerBuilder(private val currentIDConversation: String) {
 

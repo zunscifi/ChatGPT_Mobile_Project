@@ -15,9 +15,9 @@ import com.project.toandt.Model.ConversationManager
 import com.project.toandt.Model.Message
 import com.project.toandt.Model.MessageManager
 import com.project.toandt.View.Activity.ChatActivity
-import com.skydoves.chatgpt.R
-import com.skydoves.chatgpt.databinding.ActivityChatBinding
-import com.skydoves.chatgpt.feature.chat.worker.ChatGPTMessageWorker
+import com.toandtpro.chatgpt.R
+import com.toandtpro.chatgpt.databinding.ActivityChatBinding
+import com.toandtpro.chatgpt.feature.chat.worker.ChatGPTMessageWorker
 import io.getstream.log.streamLog
 
 class ChatResponseHandler(private val binding: ActivityChatBinding) {

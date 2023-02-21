@@ -45,7 +45,7 @@ android {
   }
 
   targetProjectPath = ":app"
-    namespace = "com.skydoves.chatgpt.benchmark"
+    namespace = "com.toandtpro.chatgpt.benchmark"
     experimentalProperties["android.experimental.self-instrumenting"] = true
 }
 

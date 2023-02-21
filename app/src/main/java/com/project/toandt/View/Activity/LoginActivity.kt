@@ -10,9 +10,10 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import com.google.firebase.messaging.reporting.MessagingClientEvent.SDKPlatform
 import com.project.toandt.Control.Database.DatabaseHelper
-import com.skydoves.chatgpt.databinding.ActivityLoginBinding
-import com.skydoves.chatgpt.feature.login.LOGIN_COMPLETED
-import com.skydoves.chatgpt.feature.login.LoginGPT
+import com.toandtpro.chatgpt.ChatGPTApp
+import com.toandtpro.chatgpt.databinding.ActivityLoginBinding
+import com.toandtpro.chatgpt.feature.login.LOGIN_COMPLETED
+import com.toandtpro.chatgpt.feature.login.LoginGPT
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -52,7 +53,6 @@ class LoginActivity : ComponentActivity() {
     handleSQLite()
     handleLoginTask()
   }
-
   private fun handleSQLite() {
     databaseHelper = DatabaseHelper(this)
     val db = databaseHelper.writableDatabase

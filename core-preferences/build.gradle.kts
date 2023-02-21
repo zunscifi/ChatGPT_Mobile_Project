@@ -22,5 +22,5 @@ plugins {
 dependencies {
 }
 android {
-    namespace = "com.skydoves.chatgpt.core.preferences"
+    namespace = "com.toandtpro.chatgpt.core.preferences"
 }

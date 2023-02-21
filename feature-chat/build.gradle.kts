@@ -61,5 +61,5 @@ android {
       "\"" + gradleLocalProperties(rootDir).getProperty("STREAM_CHAT_SDK", "") + "\""
     )
   }
-    namespace = "com.skydoves.chatgpt.feature.chat"
+    namespace = "com.toandtpro.chatgpt.feature.chat"
 }

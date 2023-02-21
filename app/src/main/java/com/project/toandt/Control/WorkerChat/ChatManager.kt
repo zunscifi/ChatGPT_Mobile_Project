@@ -5,7 +5,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.project.toandt.Control.Adapter.MessageAdapter
 import com.project.toandt.Model.ConversationManager
 import com.project.toandt.Model.MessageManager
-import com.skydoves.chatgpt.databinding.ActivityChatBinding
+import com.toandtpro.chatgpt.databinding.ActivityChatBinding
 
 class ChatManager(private val binding: ActivityChatBinding) {
 

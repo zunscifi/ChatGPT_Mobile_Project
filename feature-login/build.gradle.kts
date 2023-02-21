@@ -27,5 +27,5 @@ dependencies {
   implementation(libs.webview.inspector)
 }
 android {
-  namespace = "com.skydoves.chatgpt.feature.login"
+  namespace = "com.toandtpro.chatgpt.feature.login"
 }
