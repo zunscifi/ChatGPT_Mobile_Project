@@ -103,10 +103,18 @@ class ChatActivity : AppCompatActivity(), ModalBottomSheetDialog.Listener {
       binding = ActivityChatBinding.inflate(layoutInflater)
       val view = binding.root
       setContentView(view)
-      initInterAds()
-      addControls()
-      addEvents()
-      Speech.init(this, packageName);
+      try{
+        initInterAds()
+        addControls()
+        addEvents()
+        Speech.init(this, packageName);
+      }catch (e : Exception){
+        val intent = Intent(this, LoginActivity::class.java)
+        Toast.makeText(this@ChatActivity, getString(R.string.ERROR_ANR_MESSAGE), Toast.LENGTH_SHORT).show()
+        finish()
+        startActivity(intent)
+      }
+
     }
   override fun onResume() {
     super.onResume()

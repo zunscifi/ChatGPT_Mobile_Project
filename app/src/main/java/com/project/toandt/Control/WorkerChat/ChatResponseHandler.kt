@@ -1,6 +1,8 @@
 package com.project.toandt.Control.WorkerChat
 
 import android.content.Context
+import android.media.MediaPlayer
+import android.net.Uri
 import android.view.View
 import android.widget.Toast
 import androidx.lifecycle.LifecycleOwner
@@ -35,6 +37,8 @@ class ChatResponseHandler(private val binding: ActivityChatBinding) {
       messageManager.addMessage(clientMess)
       chatManager.handleDisplayChatMessages(currentIDConversation, context, conversationManager, messageManager)
       chatHistory.addMessage("User: $input")
+      playSendMessageSound(context)
+
     }
     val resultData = handleRequestResponseChatGPT(input, currentIDConversation, context, lifecycleOwner)
     resultData.observe(lifecycleOwner, Observer { result ->
@@ -47,6 +51,7 @@ class ChatResponseHandler(private val binding: ActivityChatBinding) {
           messageManager.addMessage(severMess)
           chatManager.handleDisplayChatMessages(currentIDConversation, context, conversationManager, messageManager )
           chatHistory.addMessage("ChatGPT: $data")
+          playSendMessageSound(context)
         }else{
           val severMessError = Message( -1 * System.currentTimeMillis(),
             currentIDConversation.toLong(), DatabaseHelper.SENDER_SEVER,
@@ -67,6 +72,19 @@ class ChatResponseHandler(private val binding: ActivityChatBinding) {
         }
       }
     })
+  }
+
+  private fun playSendMessageSound(context : Context){
+    val mediaPlayer = MediaPlayer()
+    val packageName = context.packageName
+    val resourceId = R.raw.send_message_sound
+    val uri = Uri.parse("android.resource://$packageName/$resourceId")
+    mediaPlayer.apply {
+      reset()
+      setDataSource(context, uri)
+      prepare()
+      start()
+    }
   }
 
   private fun handleRequestResponseChatGPT(inputStr: String, currentIDConversation : String, context : Context, lifecycleOwner: LifecycleOwner): LiveData<HashMap<String, String>> {

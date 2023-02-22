@@ -16,7 +16,7 @@
 -->
 <resources>
   <string name="stream_top_bar">Stream</string>
-  <string name="toast_success_create_channel">A random ChatGPT channel is created!</string>
-  <string name="toast_hello">Hi, I\'m OpenAI\'s ChatGPT with Stream SDK. Ask me anything!</string>
-  <string name="toast_error">Your session was expired. Please Login again to keep using.</string>
+  <string name="toast_success_create_channel">A random ChatGPT channel is created! UwU</string>
+  <string name="toast_hello">Hi, I\'m OpenAI\'s ChatGPT with Stream SDK. Ask me anything! UwU</string>
+  <string name="toast_error">Your session was expired. Please Login again to keep using UwU</string>
 </resources>

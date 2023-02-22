@@ -33,6 +33,7 @@ class ChatHistory {
     val timestamp = timestampFormatter.format(Instant.now())
     val formattedMessage = "$timestamp|$message"
     chatHistory.add(formattedMessage)
+    checkSizeMemory()
     saveStringToSharedPreferences(context, getChatHistory(), conversation_id)
   }
 
@@ -61,4 +62,12 @@ class ChatHistory {
       }
     }
   }
+  private fun checkSizeMemory(){
+    var memoryStr = getChatHistory()
+    while (memoryStr.length > 3000){
+      chatHistory.removeLast()
+      memoryStr = getChatHistory()
+    }
+  }
+
 }

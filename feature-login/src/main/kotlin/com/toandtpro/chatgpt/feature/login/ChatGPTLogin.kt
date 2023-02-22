@@ -38,6 +38,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.MutableLiveData
 import com.acsbendi.requestinspectorwebview.RequestInspectorWebViewClient
 import com.acsbendi.requestinspectorwebview.WebViewRequest
 import com.toandtpro.chatgpt.core.designsystem.component.ChatGPTSmallTopBar
@@ -56,9 +57,9 @@ var stopLogin = false
 /**
  *
  */
-fun LoginGPT(webView: WebView, context : Context, callback: (Int) -> Unit){
-  var isCompleted : Boolean = false
+fun LoginGPT(webView: WebView, context: Context, stateLiveData: MutableLiveData<Int>) {
   val preferences = Preferences(context)
+  var isCompleted = false
   webView.apply {
     webChromeClient = WebChromeClient()
     webViewClient = object : RequestInspectorWebViewClient(this@apply) {
@@ -66,29 +67,33 @@ fun LoginGPT(webView: WebView, context : Context, callback: (Int) -> Unit){
         view: WebView,
         webViewRequest: WebViewRequest
       ): WebResourceResponse? {
-        try{
-          if (checkIfAuthorized(webViewRequest.headers)) {
+        try {
+          if (stateLiveData.value == NORMAL && checkIfAuthorized(webViewRequest.headers)) {
             val authorization = webViewRequest.headers[AUTHORIZATION] ?: return null
             val cookie = webViewRequest.headers[COOKIE] ?: return null
             val userAgent = webViewRequest.headers[USER_AGENT] ?: return null
-            callback(LOGIN_COMPLETED)
+            stateLiveData.postValue(LOGIN_ING)
             isCompleted = true
-
             preferences.authorization = authorization
             preferences.cookie = cookie
             preferences.userAgent = userAgent
             Handler(Looper.getMainLooper()).post {
               Toast.makeText(context, R.string.toast_logged_in, Toast.LENGTH_SHORT).show()
             }
+          } else if (stateLiveData.value == LOGIN_ING && isCompleted) {
+            stateLiveData.postValue(LOGIN_COMPLETED)
           }
-        }catch (ignore : Exception){ }
-          return super.shouldInterceptRequest(view, webViewRequest)
+        } catch (ignore: Exception) {
+        }
+        return super.shouldInterceptRequest(view, webViewRequest)
       }
     }.apply {
       loadUrl("https://chat.openai.com/chat")
     }
   }
 }
+
+
 
 @Composable
 fun ChatGPTLogin(
