@@ -23,7 +23,8 @@
         android:name="com.google.android.gms.ads.APPLICATION_ID"
         android:value="ca-app-pub-3940256099942544~3347511713" />
         <activity
-            android:name="com.project.toandt.View.Activity.SplassActivity"
+          android:screenOrientation="portrait"
+          android:name="com.project.toandt.View.Activity.SplassActivity"
           android:exported="true"
           android:theme="@style/Theme.Diary.NoActionBarLogin">
           <intent-filter>
@@ -33,10 +34,12 @@
           </intent-filter>
         </activity>
         <activity
+          android:screenOrientation="portrait"
             android:name="com.project.toandt.View.Activity.ChatActivity"
             android:exported="false"
             android:theme="@style/Theme.Diary.NoActionBar" />
         <activity
+          android:screenOrientation="portrait"
             android:name="com.project.toandt.View.Activity.LoginActivity"
             android:exported="true"
             android:theme="@style/Theme.Diary.NoActionBarLogin">

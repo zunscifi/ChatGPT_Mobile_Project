@@ -80,7 +80,6 @@ class LoginActivity : ComponentActivity() {
         binding.wvChatgptLogin.clearHistory()
         binding.wvChatgptLogin.clearCache(true)
         CookieManager.getInstance().removeAllCookies(null)
-        Toast.makeText(this@LoginActivity, "SignOut Completed", Toast.LENGTH_SHORT).show()
       }else if (MODE == "NOT_PRESENT"){
         binding.wvChatgptLogin.clearFormData()
         binding.wvChatgptLogin.clearHistory()
