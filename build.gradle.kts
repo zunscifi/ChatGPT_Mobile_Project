@@ -13,5 +13,5 @@ plugins {
   alias(libs.plugins.spotless) apply false
   alias(libs.plugins.gms.googleServices) apply false
   alias(libs.plugins.firebase.crashlytics) apply false
-    id("org.jetbrains.kotlin.android") version "1.7.20" apply false
+    id("org.jetbrains.kotlin.android") version "1.8.20" apply false
 }
